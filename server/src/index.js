@@ -63,8 +63,17 @@ async function initializeDatabase() {
         category VARCHAR(100) NOT NULL,
         style VARCHAR(100),
         brand VARCHAR(255),
+        designer VARCHAR(255),
+        collection_name VARCHAR(200),
+        material_name VARCHAR(200),
+        color_hex VARCHAR(7),
+        width_inches DECIMAL(8,2),
+        depth_inches DECIMAL(8,2),
+        height_inches DECIMAL(8,2),
         price_usd DECIMAL(10,2),
+        retail_price DECIMAL(10,2),
         affiliate_url TEXT,
+        source_url TEXT,
         image_url TEXT,
         thumbnail_url TEXT,
         dimensions JSONB DEFAULT '{}',
@@ -74,6 +83,17 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Add new columns if table already existed
+    const newCols = [
+      'designer VARCHAR(255)', 'collection_name VARCHAR(200)', 'material_name VARCHAR(200)',
+      'color_hex VARCHAR(7)', 'width_inches DECIMAL(8,2)', 'depth_inches DECIMAL(8,2)',
+      'height_inches DECIMAL(8,2)', 'retail_price DECIMAL(10,2)', 'source_url TEXT',
+    ];
+    for (const col of newCols) {
+      const colName = col.split(' ')[0];
+      await db.query(`ALTER TABLE odh_furniture ADD COLUMN IF NOT EXISTS ${col}`).catch(() => {});
+    }
 
     // Create challenges table
     await db.query(`
@@ -229,79 +249,101 @@ async function seedSampleData() {
   }
 }
 
-// Seed furniture items
+// Seed real designer furniture
 async function seedFurniture() {
   try {
-    const furnitureCount = await db.query(`SELECT COUNT(*) FROM odh_furniture`);
-    if (parseInt(furnitureCount.rows[0].count) < 48) {
-      // Clear old seed data and re-seed with expanded catalog
-      if (parseInt(furnitureCount.rows[0].count) > 0) {
-        await db.query(`DELETE FROM odh_furniture`);
-      }
-      const furniture = [
-        // ── Sofas (8 items) ──
-        { name: 'Minimalist Grey Sofa', category: 'sofas', style: 'modern', brand: 'Design Co', price: 899.99 },
-        { name: 'Mid-Century Teal Sofa', category: 'sofas', style: 'mid-century', brand: 'Vintage Living', price: 1299.99 },
-        { name: 'Scandinavian Light Oak Sofa', category: 'sofas', style: 'scandinavian', brand: 'Nordic Home', price: 1199.99 },
-        { name: 'Velvet Navy Chesterfield', category: 'sofas', style: 'traditional', brand: 'Heritage Home', price: 1899.99 },
-        { name: 'Cloud Modular Sectional', category: 'sofas', style: 'modern', brand: 'Comfort Zone', price: 2499.99 },
-        { name: 'Leather Cognac Loveseat', category: 'sofas', style: 'mid-century', brand: 'Artisan Leather', price: 1599.99 },
-        { name: 'Boucle Ivory Sofa', category: 'sofas', style: 'modern', brand: 'Luxe Living', price: 1799.99 },
-        { name: 'Bohemian Daybed Sofa', category: 'sofas', style: 'bohemian', brand: 'Free Spirit', price: 999.99 },
-        // ── Chairs (8 items) ──
-        { name: 'Bohemian Patterned Chair', category: 'chairs', style: 'bohemian', brand: 'Ethic Home', price: 449.99 },
-        { name: 'Mid-Century Eames-Style Chair', category: 'chairs', style: 'mid-century', brand: 'Classics', price: 329.99 },
-        { name: 'Modern Minimalist Chair', category: 'chairs', style: 'modern', brand: 'Form Design', price: 279.99 },
-        { name: 'Velvet Emerald Accent Chair', category: 'chairs', style: 'traditional', brand: 'Regal Seating', price: 549.99 },
-        { name: 'Woven Rattan Lounge Chair', category: 'chairs', style: 'bohemian', brand: 'Island Living', price: 389.99 },
-        { name: 'Leather Butterfly Chair', category: 'chairs', style: 'industrial', brand: 'Urban Loft', price: 299.99 },
-        { name: 'Scandinavian Shell Chair', category: 'chairs', style: 'scandinavian', brand: 'Nordic Craft', price: 419.99 },
-        { name: 'Papasan Cushion Chair', category: 'chairs', style: 'bohemian', brand: 'Cozy Corner', price: 249.99 },
-        // ── Tables (8 items) ──
-        { name: 'Walnut Coffee Table', category: 'tables', style: 'scandinavian', brand: 'Wood Masters', price: 449.99 },
-        { name: 'Glass and Steel Coffee Table', category: 'tables', style: 'modern', brand: 'Industrial Modern', price: 399.99 },
-        { name: 'Marble Side Table', category: 'tables', style: 'modern', brand: 'Luxury Home', price: 699.99 },
-        { name: 'Round Oak Dining Table', category: 'tables', style: 'scandinavian', brand: 'Nordic Home', price: 899.99 },
-        { name: 'Live Edge Console Table', category: 'tables', style: 'industrial', brand: 'Rustic Works', price: 749.99 },
-        { name: 'Brass and Glass Nesting Tables', category: 'tables', style: 'modern', brand: 'Glam Studio', price: 549.99 },
-        { name: 'Ceramic Drum Side Table', category: 'tables', style: 'bohemian', brand: 'Earthen Home', price: 199.99 },
-        { name: 'Acrylic Waterfall Table', category: 'tables', style: 'modern', brand: 'Clear Form', price: 599.99 },
-        // ── Lamps (8 items) ──
-        { name: 'Edison Bulb Floor Lamp', category: 'lamps', style: 'industrial', brand: 'Lighting Pro', price: 179.99 },
-        { name: 'Mid-Century Arc Lamp', category: 'lamps', style: 'mid-century', brand: 'Modern Classics', price: 399.99 },
-        { name: 'Minimalist Black Pendant Lamp', category: 'lamps', style: 'modern', brand: 'Light Design', price: 149.99 },
-        { name: 'Brass Pharmacy Floor Lamp', category: 'lamps', style: 'traditional', brand: 'Classic Light', price: 259.99 },
-        { name: 'Paper Lantern Table Lamp', category: 'lamps', style: 'bohemian', brand: 'Zen Glow', price: 89.99 },
-        { name: 'Crystal Chandelier Mini', category: 'lamps', style: 'traditional', brand: 'Regal Light', price: 449.99 },
-        { name: 'Concrete Base Table Lamp', category: 'lamps', style: 'industrial', brand: 'Raw Material', price: 129.99 },
-        { name: 'Rattan Dome Pendant', category: 'lamps', style: 'bohemian', brand: 'Woven Light', price: 199.99 },
-        // ── Art (8 items) ──
-        { name: 'Abstract Canvas Art', category: 'art', style: 'modern', brand: 'Artist Co', price: 299.99 },
-        { name: 'Botanical Print Set', category: 'art', style: 'bohemian', brand: 'Nature Art', price: 129.99 },
-        { name: 'Minimalist Line Drawing', category: 'art', style: 'modern', brand: 'Simple Art', price: 89.99 },
-        { name: 'Vintage Travel Poster', category: 'art', style: 'mid-century', brand: 'Retro Prints', price: 59.99 },
-        { name: 'Oversized Oil Painting', category: 'art', style: 'traditional', brand: 'Gallery Wall', price: 599.99 },
-        { name: 'Photography Triptych', category: 'art', style: 'modern', brand: 'Lens Art', price: 249.99 },
-        { name: 'Macrame Wall Hanging', category: 'art', style: 'bohemian', brand: 'Knot Studio', price: 149.99 },
-        { name: 'Geometric Metal Wall Art', category: 'art', style: 'industrial', brand: 'Metal Craft', price: 179.99 },
-        // ── Plants (8 items) ──
-        { name: 'Potted Monstera Plant', category: 'plants', style: 'bohemian', brand: 'Plant Co', price: 45.99 },
-        { name: 'Fiddle Leaf Fig Tree', category: 'plants', style: 'modern', brand: 'Greenscape', price: 79.99 },
-        { name: 'Snake Plant in Ceramic Pot', category: 'plants', style: 'modern', brand: 'Urban Green', price: 34.99 },
-        { name: 'Trailing Pothos Planter', category: 'plants', style: 'bohemian', brand: 'Vine Life', price: 29.99 },
-        { name: 'Bird of Paradise', category: 'plants', style: 'modern', brand: 'Tropical Home', price: 89.99 },
-        { name: 'Olive Tree in Basket', category: 'plants', style: 'scandinavian', brand: 'Mediterranean', price: 129.99 },
-        { name: 'Succulent Arrangement', category: 'plants', style: 'modern', brand: 'Desert Bloom', price: 39.99 },
-        { name: 'Dried Pampas Grass Vase', category: 'plants', style: 'bohemian', brand: 'Earth Tones', price: 54.99 },
-      ];
+    // Check if we already have the new real-brand furniture (check for image_url populated)
+    const check = await db.query(`SELECT COUNT(*) FROM odh_furniture WHERE image_url IS NOT NULL AND image_url != ''`);
+    if (parseInt(check.rows[0].count) >= 48) return; // already seeded with images
 
-      for (const item of furniture) {
-        await db.query(`
-          INSERT INTO odh_furniture (name, category, style, brand, price_usd)
-          VALUES ($1, $2, $3, $4, $5)
-        `, [item.name, item.category, item.style, item.brand, item.price]);
-      }
+    // Clear old generic data and reseed with real designer furniture
+    await db.query(`DELETE FROM odh_furniture`);
+
+    const furniture = [
+      // ═══════════════════════════════════════════════════
+      // ── SOFAS ──────────────────────────────────────────
+      // ═══════════════════════════════════════════════════
+      { name: 'Camaleonda Modular Sofa', category: 'sofas', style: 'modern', brand: 'B&B Italia', designer: 'Mario Bellini', collection: 'Camaleonda', material: 'Bouclé Fabric', color: '#C4B5A0', w: 96, d: 38, h: 28, price: 12800, retail: 15200, img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=300&fit=crop', tags: ['iconic', 'modular', 'italian'] },
+      { name: 'Cloud Sofa', category: 'sofas', style: 'modern', brand: 'Restoration Hardware', designer: 'RH Design', collection: 'Cloud Collection', material: 'Belgian Linen', color: '#E8E0D4', w: 96, d: 46, h: 31, price: 5495, retail: 5495, img: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=400&h=300&fit=crop', tags: ['deep-seat', 'linen', 'oversized'] },
+      { name: 'Togo Sofa', category: 'sofas', style: 'modern', brand: 'Ligne Roset', designer: 'Michel Ducaroy', collection: 'Togo', material: 'Alcantara', color: '#D2691E', w: 68, d: 40, h: 28, price: 6490, retail: 7200, img: 'https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=400&h=300&fit=crop', tags: ['iconic', 'french', 'low-profile'] },
+      { name: 'Mags Soft Sofa', category: 'sofas', style: 'scandinavian', brand: 'HAY', designer: 'HAY Design', collection: 'Mags', material: 'Steelcut Trio Wool', color: '#2F4F4F', w: 90, d: 37, h: 30, price: 4200, retail: 4600, img: 'https://images.unsplash.com/photo-1550254478-ead40cc54513?w=400&h=300&fit=crop', tags: ['modular', 'danish', 'wool'] },
+      { name: 'Hamilton Sofa', category: 'sofas', style: 'modern', brand: 'Minotti', designer: 'Rodolfo Dordoni', collection: 'Hamilton', material: 'Full-Grain Leather', color: '#3C2415', w: 94, d: 39, h: 29, price: 14500, retail: 16800, img: 'https://images.unsplash.com/photo-1567016432779-094069958ea5?w=400&h=300&fit=crop', tags: ['italian', 'leather', 'luxury'] },
+      { name: 'Ducal Velvet Sofa', category: 'sofas', style: 'traditional', brand: 'Holly Hunt', designer: 'Holly Hunt Studio', collection: 'Great Outdoors', material: 'Mohair Velvet', color: '#1B3A5C', w: 88, d: 36, h: 32, price: 18200, retail: 22000, img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop', tags: ['velvet', 'bespoke', 'navy'] },
+      { name: 'Serpentine Sofa', category: 'sofas', style: 'modern', brand: 'Vladimir Kagan', designer: 'Vladimir Kagan', collection: 'Classics', material: 'Bouclé', color: '#F5F0E8', w: 108, d: 44, h: 30, price: 28000, retail: 35000, img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop', tags: ['sculptural', 'iconic', 'curved'] },
+      { name: 'Bolster Sofa', category: 'sofas', style: 'mid-century', brand: 'Design Within Reach', designer: 'BassamFellows', collection: 'Bolster Collection', material: 'Aniline Leather', color: '#8B4513', w: 84, d: 34, h: 29, price: 7950, retail: 8500, img: 'https://images.unsplash.com/photo-1558211583-d26f610c1eb1?w=400&h=300&fit=crop', tags: ['mid-century', 'leather', 'walnut'] },
+
+      // ═══════════════════════════════════════════════════
+      // ── CHAIRS ─────────────────────────────────────────
+      // ═══════════════════════════════════════════════════
+      { name: 'Eames Lounge Chair', category: 'chairs', style: 'mid-century', brand: 'Herman Miller', designer: 'Charles & Ray Eames', collection: 'Eames Collection', material: 'Santos Palisander & Leather', color: '#1A1A1A', w: 33, d: 33, h: 32, price: 7395, retail: 7395, img: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&h=300&fit=crop', tags: ['iconic', 'leather', 'walnut'] },
+      { name: 'Womb Chair', category: 'chairs', style: 'mid-century', brand: 'Knoll', designer: 'Eero Saarinen', collection: 'Saarinen Collection', material: 'Cato Fabric', color: '#C41E3A', w: 40, d: 34, h: 36, price: 6882, retail: 7200, img: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=400&h=300&fit=crop', tags: ['iconic', 'mid-century', 'organic'] },
+      { name: 'CH25 Lounge Chair', category: 'chairs', style: 'scandinavian', brand: 'Carl Hansen & Son', designer: 'Hans J. Wegner', collection: 'Wegner Collection', material: 'Oak & Paper Cord', color: '#D4A86A', w: 28, d: 30, h: 28, price: 5200, retail: 5800, img: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&h=300&fit=crop', tags: ['danish', 'handwoven', 'oak'] },
+      { name: 'Le Bambole Armchair', category: 'chairs', style: 'modern', brand: 'B&B Italia', designer: 'Mario Bellini', collection: 'Le Bambole', material: 'Leather', color: '#8B6914', w: 43, d: 38, h: 28, price: 8900, retail: 10500, img: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=300&fit=crop', tags: ['italian', 'sculptural', 'leather'] },
+      { name: 'Platner Arm Chair', category: 'chairs', style: 'modern', brand: 'Knoll', designer: 'Warren Platner', collection: 'Platner Collection', material: 'Nickel & Velvet', color: '#4F46E5', w: 27, d: 22, h: 30, price: 4648, retail: 5100, img: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=300&fit=crop', tags: ['sculptural', 'nickel', 'iconic'] },
+      { name: 'PP Mobler Shell Chair', category: 'chairs', style: 'scandinavian', brand: 'PP Mobler', designer: 'Hans J. Wegner', collection: 'Shell Series', material: 'Beech & Hallingdal Wool', color: '#2D5A3D', w: 36, d: 33, h: 30, price: 9800, retail: 12000, img: 'https://images.unsplash.com/photo-1519947486511-46149fa0a254?w=400&h=300&fit=crop', tags: ['danish', 'handcrafted', 'collector'] },
+      { name: 'Archibald Armchair', category: 'chairs', style: 'modern', brand: 'Poltrona Frau', designer: 'Jean-Marie Massaud', collection: 'Archibald', material: 'Pelle Frau Leather', color: '#2C1810', w: 35, d: 34, h: 41, price: 11200, retail: 13500, img: 'https://images.unsplash.com/photo-1551298370-9d3d53740c72?w=400&h=300&fit=crop', tags: ['italian', 'leather', 'executive'] },
+      { name: 'Wishbone Chair', category: 'chairs', style: 'scandinavian', brand: 'Carl Hansen & Son', designer: 'Hans J. Wegner', collection: 'CH24', material: 'Soaped Oak & Natural Cord', color: '#C8A86A', w: 22, d: 20, h: 30, price: 795, retail: 895, img: 'https://images.unsplash.com/photo-1503602642458-232111445657?w=400&h=300&fit=crop', tags: ['iconic', 'danish', 'dining'] },
+
+      // ═══════════════════════════════════════════════════
+      // ── TABLES ─────────────────────────────────────────
+      // ═══════════════════════════════════════════════════
+      { name: 'Noguchi Coffee Table', category: 'tables', style: 'mid-century', brand: 'Herman Miller', designer: 'Isamu Noguchi', collection: 'Noguchi Collection', material: 'Walnut & Glass', color: '#6B4226', w: 50, d: 36, h: 16, price: 2695, retail: 2695, img: 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400&h=300&fit=crop', tags: ['iconic', 'sculptural', 'glass'] },
+      { name: 'Saarinen Oval Dining Table', category: 'tables', style: 'modern', brand: 'Knoll', designer: 'Eero Saarinen', collection: 'Pedestal Collection', material: 'Arabescato Marble', color: '#E8E0D8', w: 78, d: 48, h: 28, price: 12890, retail: 14500, img: 'https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=300&fit=crop', tags: ['marble', 'iconic', 'dining'] },
+      { name: 'Platner Side Table', category: 'tables', style: 'modern', brand: 'Knoll', designer: 'Warren Platner', collection: 'Platner Collection', material: 'Nickel & Glass', color: '#C0C0C0', w: 16, d: 16, h: 18, price: 2395, retail: 2600, img: 'https://images.unsplash.com/photo-1499933374294-4584851497cc?w=400&h=300&fit=crop', tags: ['sculptural', 'glass', 'accent'] },
+      { name: 'CH337 Dining Table', category: 'tables', style: 'scandinavian', brand: 'Carl Hansen & Son', designer: 'Hans J. Wegner', collection: 'Dining Collection', material: 'Oiled Oak', color: '#D4A86A', w: 95, d: 45, h: 28, price: 8900, retail: 9800, img: 'https://images.unsplash.com/photo-1577140917170-285929fb55b7?w=400&h=300&fit=crop', tags: ['danish', 'extendable', 'oak'] },
+      { name: 'Alanda Coffee Table', category: 'tables', style: 'modern', brand: 'B&B Italia', designer: 'Paolo Piva', collection: 'Alanda', material: 'Tempered Glass & Steel', color: '#2A2A2A', w: 47, d: 47, h: 10, price: 4200, retail: 4800, img: 'https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?w=400&h=300&fit=crop', tags: ['geometric', 'glass', 'italian'] },
+      { name: 'Tobi-Ishi Table', category: 'tables', style: 'modern', brand: 'B&B Italia', designer: 'Edward Barber & Jay Osgerby', collection: 'Tobi-Ishi', material: 'Calacatta Marble', color: '#F5F0E8', w: 94, d: 44, h: 29, price: 18500, retail: 22000, img: 'https://images.unsplash.com/photo-1618220179428-22790b461013?w=400&h=300&fit=crop', tags: ['marble', 'sculptural', 'italian'] },
+      { name: 'Eames Walnut Stool', category: 'tables', style: 'mid-century', brand: 'Herman Miller', designer: 'Charles & Ray Eames', collection: 'Eames Collection', material: 'Solid Walnut', color: '#5C3317', w: 13, d: 13, h: 15, price: 1295, retail: 1295, img: 'https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?w=400&h=300&fit=crop', tags: ['walnut', 'accent', 'versatile'] },
+      { name: 'Superellipse Table', category: 'tables', style: 'scandinavian', brand: 'Fritz Hansen', designer: 'Piet Hein & Bruno Mathsson', collection: 'Superellipse', material: 'White Laminate & Chrome', color: '#F8F8F8', w: 71, d: 48, h: 28, price: 3890, retail: 4200, img: 'https://images.unsplash.com/photo-1604578762246-41134e37f9cc?w=400&h=300&fit=crop', tags: ['danish', 'minimalist', 'chrome'] },
+
+      // ═══════════════════════════════════════════════════
+      // ── LAMPS ──────────────────────────────────────────
+      // ═══════════════════════════════════════════════════
+      { name: 'Arco Floor Lamp', category: 'lamps', style: 'modern', brand: 'Flos', designer: 'Achille & Pier Giacomo Castiglioni', collection: 'Arco', material: 'Carrara Marble & Stainless Steel', color: '#C0C0C0', w: 13, d: 13, h: 95, price: 3195, retail: 3500, img: 'https://images.unsplash.com/photo-1507473885765-e6ed057ab853?w=400&h=300&fit=crop', tags: ['iconic', 'italian', 'marble-base'] },
+      { name: 'PH 5 Pendant', category: 'lamps', style: 'scandinavian', brand: 'Louis Poulsen', designer: 'Poul Henningsen', collection: 'PH Series', material: 'Spun Aluminum', color: '#F5F0E8', w: 20, d: 20, h: 12, price: 1248, retail: 1400, img: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&h=300&fit=crop', tags: ['iconic', 'danish', 'pendant'] },
+      { name: 'Grasshopper Floor Lamp', category: 'lamps', style: 'mid-century', brand: 'Gubi', designer: 'Greta Magnusson Grossman', collection: 'Grasshopper', material: 'Matte Black Steel', color: '#1A1A1A', w: 18, d: 18, h: 50, price: 1099, retail: 1200, img: 'https://images.unsplash.com/photo-1543198126-a8ad8e47fb22?w=400&h=300&fit=crop', tags: ['scandinavian', 'floor', 'tripod'] },
+      { name: 'IC Lights Table', category: 'lamps', style: 'modern', brand: 'Flos', designer: 'Michael Anastassiades', collection: 'IC Lights', material: 'Brass & Blown Glass', color: '#C8A060', w: 10, d: 10, h: 21, price: 795, retail: 895, img: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=400&h=300&fit=crop', tags: ['brass', 'sphere', 'table'] },
+      { name: 'AJ Table Lamp', category: 'lamps', style: 'mid-century', brand: 'Louis Poulsen', designer: 'Arne Jacobsen', collection: 'AJ Series', material: 'Zinc & Steel', color: '#333333', w: 8, d: 14, h: 22, price: 998, retail: 1100, img: 'https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=400&h=300&fit=crop', tags: ['iconic', 'danish', 'directional'] },
+      { name: 'Flowerpot VP1 Pendant', category: 'lamps', style: 'modern', brand: '&Tradition', designer: 'Verner Panton', collection: 'Flowerpot', material: 'Lacquered Steel', color: '#4F46E5', w: 9, d: 9, h: 6, price: 459, retail: 499, img: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&h=300&fit=crop', tags: ['colorful', 'pendant', 'playful'] },
+      { name: 'Tolomeo Mega Floor', category: 'lamps', style: 'modern', brand: 'Artemide', designer: 'Michele De Lucchi', collection: 'Tolomeo', material: 'Aluminum & Parchment', color: '#E8E0D4', w: 14, d: 14, h: 72, price: 1595, retail: 1800, img: 'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=300&fit=crop', tags: ['articulating', 'italian', 'floor'] },
+      { name: 'Nelson Bubble Lamp', category: 'lamps', style: 'mid-century', brand: 'Herman Miller', designer: 'George Nelson', collection: 'Bubble Collection', material: 'Self-Webbing Polymer', color: '#F5F0E8', w: 24, d: 24, h: 16, price: 695, retail: 695, img: 'https://images.unsplash.com/photo-1530603907829-659dc1d5d42c?w=400&h=300&fit=crop', tags: ['iconic', 'pendant', 'organic'] },
+
+      // ═══════════════════════════════════════════════════
+      // ── ART ────────────────────────────────────────────
+      // ═══════════════════════════════════════════════════
+      { name: 'Color Field No. 9', category: 'art', style: 'modern', brand: 'Saatchi Art', designer: 'Studio Collective', collection: 'Color Field Series', material: 'Oil on Canvas', color: '#E04040', w: 48, d: 2, h: 36, price: 3200, retail: 3800, img: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop', tags: ['abstract', 'oil', 'statement'] },
+      { name: 'Botanical Study Triptych', category: 'art', style: 'traditional', brand: 'Natural Curiosities', designer: 'Various', collection: 'Botanical Studies', material: 'Giclée on Paper', color: '#2D5A3D', w: 54, d: 1, h: 24, price: 1800, retail: 2200, img: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=400&h=300&fit=crop', tags: ['botanical', 'triptych', 'classic'] },
+      { name: 'Minimalist Line Series', category: 'art', style: 'modern', brand: 'Tappan Collective', designer: 'Independent', collection: 'Line Series', material: 'Ink on Cotton Paper', color: '#1A1A1A', w: 30, d: 1, h: 40, price: 890, retail: 1100, img: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=300&fit=crop', tags: ['minimalist', 'line-art', 'monochrome'] },
+      { name: 'Agate Slice Diptych', category: 'art', style: 'modern', brand: 'Minted', designer: 'Crystal Arts', collection: 'Geological Series', material: 'Photography on Aluminum', color: '#4F46E5', w: 40, d: 1, h: 30, price: 1400, retail: 1600, img: 'https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=400&h=300&fit=crop', tags: ['geological', 'photography', 'modern'] },
+      { name: 'Ocean Gradient Canvas', category: 'art', style: 'modern', brand: 'Artsy', designer: 'Coastal Studio', collection: 'Gradient Series', material: 'Acrylic on Linen', color: '#1B5E8C', w: 60, d: 2, h: 40, price: 4500, retail: 5200, img: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400&h=300&fit=crop', tags: ['gradient', 'coastal', 'large'] },
+      { name: 'Handwoven Textile Art', category: 'art', style: 'bohemian', brand: 'Anthropologie', designer: 'Artisan Collective', collection: 'Woven Series', material: 'Cotton & Wool on Dowel', color: '#C8A060', w: 36, d: 3, h: 28, price: 680, retail: 780, img: 'https://images.unsplash.com/photo-1582582621959-48d27397dc69?w=400&h=300&fit=crop', tags: ['textile', 'handwoven', 'boho'] },
+      { name: 'Bronze Disc Sculpture', category: 'art', style: 'modern', brand: 'Arteriors', designer: 'Barry Dixon', collection: 'Metal Works', material: 'Patinated Bronze', color: '#8B6914', w: 36, d: 4, h: 36, price: 2800, retail: 3400, img: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&h=300&fit=crop', tags: ['sculpture', 'bronze', '3d'] },
+      { name: 'Oversized Photography Print', category: 'art', style: 'modern', brand: 'Sonic Editions', designer: 'Archive Photography', collection: 'Icon Series', material: 'C-Type on Aluminum', color: '#333333', w: 40, d: 1, h: 60, price: 1200, retail: 1400, img: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&h=300&fit=crop', tags: ['photography', 'oversized', 'portrait'] },
+
+      // ═══════════════════════════════════════════════════
+      // ── PLANTS ─────────────────────────────────────────
+      // ═══════════════════════════════════════════════════
+      { name: 'Monstera Deliciosa XL', category: 'plants', style: 'modern', brand: 'The Sill', designer: null, collection: 'Tropical Collection', material: 'Ceramic Planter', color: '#2D8A4E', w: 24, d: 24, h: 42, price: 195, retail: 225, img: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?w=400&h=300&fit=crop', tags: ['tropical', 'statement', 'low-light'] },
+      { name: 'Fiddle Leaf Fig Tree', category: 'plants', style: 'modern', brand: 'Bloomscape', designer: null, collection: 'Trees Collection', material: 'Stone Planter', color: '#3A7D44', w: 30, d: 30, h: 60, price: 299, retail: 349, img: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400&h=300&fit=crop', tags: ['tree', 'statement', 'bright-light'] },
+      { name: 'Olive Tree', category: 'plants', style: 'scandinavian', brand: 'Terrain', designer: null, collection: 'Mediterranean', material: 'Terracotta Pot', color: '#708238', w: 28, d: 28, h: 48, price: 389, retail: 450, img: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=400&h=300&fit=crop', tags: ['tree', 'mediterranean', 'terracotta'] },
+      { name: 'Bird of Paradise', category: 'plants', style: 'bohemian', brand: 'The Sill', designer: null, collection: 'Tropical Collection', material: 'Woven Basket', color: '#228B22', w: 26, d: 26, h: 54, price: 249, retail: 289, img: 'https://images.unsplash.com/photo-1572969176406-b09a16168a05?w=400&h=300&fit=crop', tags: ['tropical', 'tall', 'dramatic'] },
+      { name: 'Snake Plant Laurentii', category: 'plants', style: 'modern', brand: 'Bloomscape', designer: null, collection: 'Air Purifying', material: 'Matte White Ceramic', color: '#3B5323', w: 10, d: 10, h: 36, price: 65, retail: 79, img: 'https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?w=400&h=300&fit=crop', tags: ['air-purifying', 'low-light', 'architectural'] },
+      { name: 'Potted Succulent Arrangement', category: 'plants', style: 'modern', brand: 'Terrain', designer: null, collection: 'Desert Collection', material: 'Concrete Bowl', color: '#88B04B', w: 14, d: 14, h: 8, price: 85, retail: 99, img: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400&h=300&fit=crop', tags: ['succulent', 'low-water', 'tabletop'] },
+      { name: 'Dried Pampas Grass Vase', category: 'plants', style: 'bohemian', brand: 'CB2', designer: null, collection: 'Natural Collection', material: 'Glass Cylinder Vase', color: '#D2B48C', w: 12, d: 12, h: 40, price: 129, retail: 149, img: 'https://images.unsplash.com/photo-1598880940080-ff9a29891b85?w=400&h=300&fit=crop', tags: ['dried', 'boho', 'sculptural'] },
+      { name: 'Trailing Pothos in Macrame', category: 'plants', style: 'bohemian', brand: 'The Sill', designer: null, collection: 'Hanging Collection', material: 'Macrame & Ceramic', color: '#50C878', w: 10, d: 10, h: 30, price: 75, retail: 89, img: 'https://images.unsplash.com/photo-1620127252536-03bdfcb5ef73?w=400&h=300&fit=crop', tags: ['hanging', 'trailing', 'boho'] },
+    ];
+
+    for (const item of furniture) {
+      await db.query(`
+        INSERT INTO odh_furniture (name, category, style, brand, designer, collection_name, material_name, color_hex,
+          width_inches, depth_inches, height_inches, price_usd, retail_price, image_url, tags, is_active)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,true)
+      `, [
+        item.name, item.category, item.style, item.brand, item.designer, item.collection, item.material, item.color,
+        item.w, item.d, item.h, item.price, item.retail, item.img, JSON.stringify(item.tags),
+      ]);
     }
+    console.log('Seeded 48 real designer furniture items');
   } catch (err) {
     console.error('Error seeding furniture:', err);
   }

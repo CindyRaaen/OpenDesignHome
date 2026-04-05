@@ -5,7 +5,7 @@ const router = express.Router();
 
 // GET / - list all furniture with filters
 router.get('/', async (req, res) => {
-  const { category, style, search } = req.query;
+  const { category, style, search, brand } = req.query;
   try {
     let query = 'SELECT * FROM odh_furniture WHERE is_active = true';
     const params = [];
@@ -18,18 +18,37 @@ router.get('/', async (req, res) => {
       params.push(style);
       query += ` AND style = $${params.length}`;
     }
+    if (brand) {
+      params.push(brand);
+      query += ` AND brand = $${params.length}`;
+    }
     if (search) {
       params.push(`%${search}%`);
-      query += ` AND name ILIKE $${params.length}`;
+      query += ` AND (name ILIKE $${params.length} OR brand ILIKE $${params.length} OR designer ILIKE $${params.length} OR material_name ILIKE $${params.length})`;
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY brand, price_usd DESC';
 
     const result = await db.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch furniture' });
+  }
+});
+
+// GET /brands - list all brands
+router.get('/brands', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT brand, COUNT(*) as count, MIN(price_usd) as min_price, MAX(price_usd) as max_price
+      FROM odh_furniture WHERE is_active = true AND brand IS NOT NULL
+      GROUP BY brand ORDER BY brand
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch brands' });
   }
 });
 

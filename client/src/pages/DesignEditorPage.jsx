@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
-import { ArrowLeft, Send, ChevronDown, Check, X, Palette, Armchair, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Send, ChevronDown, Check, X, Palette, Armchair, RotateCcw, ExternalLink, Star, Search } from 'lucide-react'
 import { api } from '../utils/api'
 
 const ThreeDRoom = lazy(() => import('../components/ThreeDRoom'))
@@ -152,6 +152,8 @@ export default function DesignEditorPage({ challenge, setPage }) {
   const [activeSlot, setActiveSlot] = useState(null)  // which slot is being filled
   const [activePanel, setActivePanel] = useState(null) // 'wallpaper' | 'rug' | 'floor' | null
   const [filterCat, setFilterCat] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedDetail, setSelectedDetail] = useState(null) // furniture item to show details for
 
   const template = ROOM_TEMPLATES[challenge?.room_type] || ROOM_TEMPLATES.living_room
 
@@ -168,6 +170,10 @@ export default function DesignEditorPage({ challenge, setPage }) {
   const catalogItems = furniture.filter(f => {
     if (allowedCategories.length && !allowedCategories.includes(f.category)) return false
     if (filterCat !== 'all' && f.category !== filterCat) return false
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      return (f.name?.toLowerCase().includes(q) || f.brand?.toLowerCase().includes(q) || f.designer?.toLowerCase().includes(q) || f.material_name?.toLowerCase().includes(q))
+    }
     return true
   })
 
@@ -261,7 +267,7 @@ export default function DesignEditorPage({ challenge, setPage }) {
           {/* ── Slot picker (tap to fill) ── */}
           <div className="w-full max-w-lg">
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 px-1">Tap a spot to furnish it</h3>
-            <div className="flex gap-1.5 overflow-x-auto pb-1.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
               {template.slots.map(slot => {
                 const filled = filledSlots[slot.id]
                 const isActive = activeSlot === slot.id
@@ -269,19 +275,33 @@ export default function DesignEditorPage({ challenge, setPage }) {
                   <button
                     key={slot.id}
                     onClick={() => filled ? clearSlot(slot.id) : setActiveSlot(slot.id)}
-                    className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium transition border ${
+                    className={`shrink-0 rounded-lg transition border overflow-hidden ${
                       filled
-                        ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                        ? 'border-indigo-500/50 bg-gray-800'
                         : isActive
-                          ? 'bg-indigo-500 border-indigo-400 text-white'
-                          : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'
+                          ? 'border-indigo-400 bg-indigo-500'
+                          : 'border-gray-700 bg-gray-800 hover:border-gray-500'
                     }`}
+                    style={{ width: filled ? 72 : 'auto' }}
                   >
-                    <span className="mr-1">{CATEGORY_ICONS[slot.categories[0]] || '📦'}</span>
-                    {filled ? (
-                      <span>{filled.name.length > 12 ? filled.name.slice(0, 11) + '…' : filled.name} ✕</span>
+                    {filled && filled.image_url ? (
+                      <div className="relative">
+                        <img src={filled.image_url} alt="" className="w-full h-12 object-cover" />
+                        <div className="absolute top-0 right-0 bg-red-500/80 rounded-bl px-1">
+                          <X size={10} className="text-white" />
+                        </div>
+                        <p className="text-[9px] text-indigo-300 px-1 py-0.5 truncate">{filled.brand}</p>
+                      </div>
+                    ) : filled ? (
+                      <div className="px-3 py-2 text-xs font-medium text-indigo-300">
+                        <span className="mr-1">{CATEGORY_ICONS[slot.categories[0]] || '📦'}</span>
+                        {filled.name.length > 10 ? filled.name.slice(0, 9) + '…' : filled.name} ✕
+                      </div>
                     ) : (
-                      <span>{slot.label}</span>
+                      <div className="px-3 py-2 text-xs font-medium text-gray-400">
+                        <span className="mr-1">{CATEGORY_ICONS[slot.categories[0]] || '📦'}</span>
+                        {slot.label}
+                      </div>
                     )}
                   </button>
                 )
@@ -387,21 +407,36 @@ export default function DesignEditorPage({ challenge, setPage }) {
       </div>
 
       {/* ── Furniture picker overlay (when a slot is tapped) ── */}
-      {activeSlot && (
+      {activeSlot && !selectedDetail && (
         <div className="fixed inset-0 z-50 bg-gray-900/95 flex flex-col">
-          <div className="p-3 border-b border-gray-700 flex items-center gap-3 bg-gray-800">
-            <button onClick={() => setActiveSlot(null)} className="text-gray-400 hover:text-white">
-              <X size={22} />
-            </button>
-            <div className="flex-1">
-              <h2 className="text-base font-bold text-white">Choose: {slotDef?.label}</h2>
-              <p className="text-xs text-gray-400">
-                {allowedCategories.map(c => (CATEGORY_ICONS[c] || '') + ' ' + c).join(', ')}
-              </p>
+          {/* Header */}
+          <div className="p-3 border-b border-gray-700 bg-gray-800">
+            <div className="flex items-center gap-3 mb-2">
+              <button onClick={() => { setActiveSlot(null); setSearchQuery('') }} className="text-gray-400 hover:text-white">
+                <X size={22} />
+              </button>
+              <div className="flex-1">
+                <h2 className="text-base font-bold text-white">Choose: {slotDef?.label}</h2>
+                <p className="text-xs text-gray-400">
+                  {allowedCategories.map(c => (CATEGORY_ICONS[c] || '') + ' ' + c).join(', ')}
+                </p>
+              </div>
+              <span className="text-xs text-gray-500">{catalogItems.length} items</span>
+            </div>
+            {/* Search bar */}
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-2.5 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by name, brand, designer, or material..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+              />
             </div>
           </div>
 
-          {/* Category filter if multiple categories */}
+          {/* Category filter */}
           {allowedCategories.length > 1 && (
             <div className="px-3 pt-2 flex gap-1.5 flex-wrap">
               <button onClick={() => setFilterCat('all')}
@@ -417,22 +452,147 @@ export default function DesignEditorPage({ challenge, setPage }) {
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+          {/* Product grid */}
+          <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
               <p className="text-gray-500 text-sm p-4 text-center">Loading furniture...</p>
             ) : catalogItems.length === 0 ? (
-              <p className="text-gray-500 text-sm p-4 text-center">No items available for this slot</p>
-            ) : catalogItems.map(item => (
-              <button key={item.id} onClick={() => placeItem(activeSlot, item)}
-                className="w-full bg-gray-800 hover:bg-gray-700 rounded-lg p-3 text-left transition flex items-center gap-3 border border-gray-700">
-                <span className="text-3xl w-12 text-center">{CATEGORY_ICONS[item.category] || '📦'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-base truncate">{item.name}</p>
-                  <p className="text-sm text-gray-400">${parseFloat(item.price_usd || 0).toFixed(0)} · {item.style}</p>
+              <p className="text-gray-500 text-sm p-4 text-center">No items match your search</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5">
+                {catalogItems.map(item => (
+                  <div key={item.id} className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden group">
+                    {/* Product image */}
+                    <div className="relative aspect-[4/3] bg-gray-700 overflow-hidden">
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl">
+                          {CATEGORY_ICONS[item.category] || '📦'}
+                        </div>
+                      )}
+                      {/* Brand badge */}
+                      <div className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm rounded px-1.5 py-0.5">
+                        <span className="text-[10px] font-semibold text-white">{item.brand}</span>
+                      </div>
+                      {/* Price badge */}
+                      <div className="absolute bottom-1.5 right-1.5 bg-indigo-600/90 backdrop-blur-sm rounded px-1.5 py-0.5">
+                        <span className="text-[10px] font-bold text-white">${parseFloat(item.price_usd || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                    {/* Product info */}
+                    <div className="p-2">
+                      <p className="text-xs font-semibold text-white truncate leading-tight">{item.name}</p>
+                      {item.designer && <p className="text-[10px] text-gray-400 truncate">by {item.designer}</p>}
+                      <p className="text-[10px] text-gray-500 truncate">{item.material_name || item.style}</p>
+                      <div className="flex gap-1.5 mt-1.5">
+                        <button onClick={() => placeItem(activeSlot, item)}
+                          className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white text-[11px] font-semibold py-1.5 rounded transition">
+                          Place
+                        </button>
+                        <button onClick={() => setSelectedDetail(item)}
+                          className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-[11px] px-2 py-1.5 rounded transition">
+                          Info
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Product detail modal ── */}
+      {selectedDetail && (
+        <div className="fixed inset-0 z-50 bg-gray-900/98 flex flex-col">
+          <div className="p-3 border-b border-gray-700 flex items-center gap-3 bg-gray-800">
+            <button onClick={() => setSelectedDetail(null)} className="text-gray-400 hover:text-white">
+              <ArrowLeft size={22} />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-white truncate">{selectedDetail.name}</h2>
+              <p className="text-xs text-indigo-400">{selectedDetail.brand}</p>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {/* Hero image */}
+            {selectedDetail.image_url && (
+              <div className="aspect-[4/3] bg-gray-800">
+                <img src={selectedDetail.image_url} alt={selectedDetail.name} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="p-4 space-y-4">
+              {/* Name & price */}
+              <div>
+                <h3 className="text-xl font-bold text-white">{selectedDetail.name}</h3>
+                <p className="text-sm text-indigo-400 font-medium">{selectedDetail.brand}</p>
+                {selectedDetail.designer && <p className="text-sm text-gray-400">Designed by {selectedDetail.designer}</p>}
+                {selectedDetail.collection_name && <p className="text-xs text-gray-500">{selectedDetail.collection_name}</p>}
+              </div>
+              {/* Price */}
+              <div className="flex items-baseline gap-3">
+                <span className="text-2xl font-bold text-white">${parseFloat(selectedDetail.price_usd || 0).toLocaleString()}</span>
+                {selectedDetail.retail_price && parseFloat(selectedDetail.retail_price) > parseFloat(selectedDetail.price_usd) && (
+                  <span className="text-sm text-gray-500 line-through">${parseFloat(selectedDetail.retail_price).toLocaleString()}</span>
+                )}
+                {selectedDetail.retail_price && parseFloat(selectedDetail.retail_price) > parseFloat(selectedDetail.price_usd) && (
+                  <span className="text-xs text-green-400 font-medium">Trade Price</span>
+                )}
+              </div>
+              {/* Specs */}
+              <div className="bg-gray-800 rounded-lg p-3 space-y-2">
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Specifications</h4>
+                {selectedDetail.material_name && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Material</span>
+                    <span className="text-white">{selectedDetail.material_name}</span>
+                  </div>
+                )}
+                {(selectedDetail.width_inches || selectedDetail.depth_inches || selectedDetail.height_inches) && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Dimensions</span>
+                    <span className="text-white">
+                      {selectedDetail.width_inches && `${selectedDetail.width_inches}"W`}
+                      {selectedDetail.depth_inches && ` × ${selectedDetail.depth_inches}"D`}
+                      {selectedDetail.height_inches && ` × ${selectedDetail.height_inches}"H`}
+                    </span>
+                  </div>
+                )}
+                {selectedDetail.style && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Style</span>
+                    <span className="text-white capitalize">{selectedDetail.style}</span>
+                  </div>
+                )}
+                {selectedDetail.color_hex && (
+                  <div className="flex justify-between text-sm items-center">
+                    <span className="text-gray-400">Color</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border border-gray-600" style={{ backgroundColor: selectedDetail.color_hex }}></div>
+                      <span className="text-white text-xs">{selectedDetail.color_hex}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Tags */}
+              {selectedDetail.tags && selectedDetail.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {(typeof selectedDetail.tags === 'string' ? JSON.parse(selectedDetail.tags) : selectedDetail.tags).map(tag => (
+                    <span key={tag} className="bg-gray-800 text-gray-400 text-[10px] px-2 py-0.5 rounded-full border border-gray-700">{tag}</span>
+                  ))}
                 </div>
-                <div className="bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded text-xs font-medium">Select</div>
-              </button>
-            ))}
+              )}
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => { placeItem(activeSlot, selectedDetail); setSelectedDetail(null) }}
+                  className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg transition text-base">
+                  Place in Room
+                </button>
+              </div>
+              <p className="text-center text-[10px] text-gray-600">Real furniture from real designers — no in-app purchases</p>
+            </div>
           </div>
         </div>
       )}

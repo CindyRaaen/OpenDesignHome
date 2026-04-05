@@ -476,7 +476,9 @@ export default function ThreeDRoom({
       const pos = slotTo3D(slot, W, D, H)
 
       if (item) {
-        const mesh = buildFurniture(item.category)
+        // Use real product color_hex if available, otherwise fall back to category defaults
+        const itemColor = item.color_hex ? parseInt(item.color_hex.replace('#', ''), 16) : null
+        const mesh = buildFurniture(item.category, itemColor)
         mesh.position.set(pos.x, pos.y, pos.z)
         if (slot.zone === 'wall') {
           // Wall items face outward
