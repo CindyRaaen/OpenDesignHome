@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
-import { ArrowLeft, Send, ChevronDown, Check, X, Palette, Armchair } from 'lucide-react'
+import { useEffect, useState, lazy, Suspense } from 'react'
+import { ArrowLeft, Send, ChevronDown, Check, X, Palette, Armchair, RotateCcw } from 'lucide-react'
 import { api } from '../utils/api'
+
+const ThreeDRoom = lazy(() => import('../components/ThreeDRoom'))
 
 // ── Wallpaper options ──
 const WALLPAPERS = [
@@ -222,22 +224,6 @@ export default function DesignEditorPage({ challenge, setPage }) {
     )
   }
 
-  // ── Wallpaper style for the back wall ──
-  const wallStyle = {
-    backgroundColor: wallpaper.bg,
-    ...(wallpaper.pattern ? { backgroundImage: wallpaper.pattern, backgroundSize: '40px 40px' } : {}),
-  }
-
-  // ── Floor style ──
-  const floorStyle = {
-    backgroundColor: floor.color,
-    backgroundImage: `repeating-linear-gradient(90deg, ${floor.stripe} 0px, ${floor.stripe} 2px, transparent 2px, transparent 48px)`,
-    backgroundSize: '48px 100%',
-  }
-
-  // Dark wallpaper = light text
-  const isDarkWall = ['navy', 'charcoal'].includes(wallpaper.id)
-
   return (
     <div className="flex flex-col h-full min-h-screen bg-gray-900">
       {/* ── Top bar ── */}
@@ -255,182 +241,51 @@ export default function DesignEditorPage({ challenge, setPage }) {
       <div className="flex-1 overflow-auto">
         <div className="p-3 flex flex-col items-center gap-3">
 
-          {/* The perspective room */}
-          <div className="w-full max-w-lg" style={{ perspective: '600px' }}>
-            <div className="relative" style={{ paddingBottom: '75%' }}>
-              <div className="absolute inset-0 overflow-hidden rounded-lg shadow-2xl">
+          {/* ── 3D Room ── */}
+          <div className="w-full max-w-lg">
+            <Suspense fallback={<div className="w-full h-80 bg-gray-800 rounded-lg flex items-center justify-center text-gray-500">Loading 3D room...</div>}>
+              <ThreeDRoom
+                roomType={challenge?.room_type || 'living_room'}
+                wallpaperId={wallpaper.id}
+                floorId={floor.id}
+                rugId={rug.id}
+                filledSlots={filledSlots}
+                slots={template.slots}
+                activeSlot={activeSlot}
+                onSlotClick={(slotId) => setActiveSlot(slotId)}
+              />
+            </Suspense>
+            <p className="text-center text-gray-500 text-xs mt-1">Drag to orbit the room</p>
+          </div>
 
-                {/* ── Back wall ── */}
-                <div className="absolute z-0" style={{
-                  top: '0', left: '12%', right: '12%', bottom: '40%',
-                  ...wallStyle,
-                  borderBottom: '3px solid #8b7355',
-                }}>
-                  {/* Crown molding */}
-                  <div className="absolute top-0 left-0 right-0 h-2" style={{ background: 'linear-gradient(180deg, #f0ebe4, #d4cec4)' }}></div>
-
-                  {/* ── Windows ── */}
-                  {template.windowCount >= 1 && (
-                    <div className="absolute" style={{ left: '8%', top: '15%', width: '28%', height: '55%' }}>
-                      <div className="w-full h-full rounded-t-sm" style={{ border: '3px solid #f0ebe4', background: 'linear-gradient(180deg, #87CEEB 0%, #b8dff0 60%, #d4eef8 100%)', boxShadow: 'inset 0 0 20px rgba(255,255,255,0.3)' }}>
-                        <div className="absolute inset-0 flex">
-                          <div className="flex-1 border-r" style={{ borderColor: '#f0ebe4' }}></div>
-                          <div className="flex-1"></div>
-                        </div>
-                        <div className="absolute left-0 right-0 top-1/2" style={{ height: '2px', background: '#f0ebe4' }}></div>
-                      </div>
-                      {/* Sill */}
-                      <div style={{ height: '6px', background: 'linear-gradient(180deg, #f0ebe4, #d4cec4)', borderRadius: '0 0 2px 2px' }}></div>
-                    </div>
-                  )}
-                  {template.windowCount >= 2 && (
-                    <div className="absolute" style={{ right: '8%', top: '15%', width: '28%', height: '55%' }}>
-                      <div className="w-full h-full rounded-t-sm" style={{ border: '3px solid #f0ebe4', background: 'linear-gradient(180deg, #87CEEB 0%, #b8dff0 60%, #d4eef8 100%)', boxShadow: 'inset 0 0 20px rgba(255,255,255,0.3)' }}>
-                        <div className="absolute inset-0 flex">
-                          <div className="flex-1 border-r" style={{ borderColor: '#f0ebe4' }}></div>
-                          <div className="flex-1"></div>
-                        </div>
-                        <div className="absolute left-0 right-0 top-1/2" style={{ height: '2px', background: '#f0ebe4' }}></div>
-                      </div>
-                      <div style={{ height: '6px', background: 'linear-gradient(180deg, #f0ebe4, #d4cec4)', borderRadius: '0 0 2px 2px' }}></div>
-                    </div>
-                  )}
-
-                  {/* ── Fireplace ── */}
-                  {template.hasFireplace && (
-                    <div className="absolute" style={{ left: '50%', bottom: '0', transform: 'translateX(-50%)', width: '30%', height: '60%' }}>
-                      {/* Mantle */}
-                      <div style={{ height: '8%', background: 'linear-gradient(180deg, #f0ebe4, #c8bfb0)', borderRadius: '3px 3px 0 0', boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }}></div>
-                      {/* Surround */}
-                      <div className="relative" style={{ height: '92%', background: '#e8e0d4', border: '2px solid #c8bfb0' }}>
-                        {/* Opening */}
-                        <div className="absolute" style={{ left: '15%', right: '15%', top: '8%', bottom: '0', background: '#1a1a1a', borderRadius: '40% 40% 0 0' }}>
-                          {/* Fire glow */}
-                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: '60%', height: '45%', background: 'radial-gradient(ellipse, #ff6b35 0%, #ff4500 40%, transparent 70%)', opacity: 0.8, filter: 'blur(3px)' }}></div>
-                          {/* Logs */}
-                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2" style={{ width: '70%', height: '18%', background: '#4a3728', borderRadius: '40%' }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Wall-zone slots (art, etc.) ── */}
-                  {template.slots.filter(s => s.zone === 'wall').map(slot => {
-                    const filled = filledSlots[slot.id]
-                    return (
-                      <button
-                        key={slot.id}
-                        onClick={() => filled ? clearSlot(slot.id) : setActiveSlot(slot.id)}
-                        className="absolute transition-all group"
-                        style={{ left: slot.x, top: slot.y, width: slot.w, height: slot.h, zIndex: 5 }}
-                      >
-                        {filled ? (
-                          <div className="w-full h-full rounded shadow-lg flex items-center justify-center relative" style={{
-                            background: 'linear-gradient(145deg, #f5f0e8, #e0d8cc)',
-                            border: '3px solid #c8bfb0',
-                            boxShadow: '2px 3px 8px rgba(0,0,0,0.25)',
-                          }}>
-                            <span className="text-2xl">{CATEGORY_ICONS[filled.category] || '🖼️'}</span>
-                            <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</div>
-                          </div>
-                        ) : (
-                          <div className={`w-full h-full rounded border-2 border-dashed flex flex-col items-center justify-center transition-all ${isDarkWall ? 'border-white/30 hover:border-white/60' : 'border-gray-500/30 hover:border-indigo-400/60 hover:bg-indigo-100/20'}`}>
-                            <span className="text-lg opacity-40 group-hover:opacity-70">🖼️</span>
-                            <span className={`text-xs font-medium mt-0.5 opacity-40 group-hover:opacity-70 ${isDarkWall ? 'text-white' : 'text-gray-600'}`}>{slot.label}</span>
-                          </div>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* ── Left wall (perspective) ── */}
-                <div className="absolute z-1" style={{
-                  top: '0', left: '0', width: '12%', bottom: '40%',
-                  background: `linear-gradient(90deg, ${adjustColor(wallpaper.bg, -30)}, ${wallpaper.bg})`,
-                  borderRight: '2px solid rgba(0,0,0,0.08)',
-                  transformOrigin: 'right center',
-                }}></div>
-
-                {/* ── Right wall (perspective) ── */}
-                <div className="absolute z-1" style={{
-                  top: '0', right: '0', width: '12%', bottom: '40%',
-                  background: `linear-gradient(270deg, ${adjustColor(wallpaper.bg, -30)}, ${wallpaper.bg})`,
-                  borderLeft: '2px solid rgba(0,0,0,0.08)',
-                }}></div>
-
-                {/* ── Floor ── */}
-                <div className="absolute z-0" style={{
-                  top: '60%', left: '0', right: '0', bottom: '0',
-                  ...floorStyle,
-                  transform: 'perspective(400px) rotateX(5deg)',
-                  transformOrigin: 'top center',
-                }}>
-                  {/* Baseboard */}
-                  <div className="absolute top-0 left-0 right-0" style={{ height: '4px', background: '#d4cec4' }}></div>
-                </div>
-
-                {/* ── Rug on floor ── */}
-                {rug.id !== 'none' && (
-                  <div className="absolute z-2" style={{
-                    top: '62%', left: '20%', right: '20%', bottom: '5%',
-                    backgroundColor: rug.color,
-                    border: `3px solid ${rug.border}`,
-                    borderRadius: '2px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  }}>
-                    {rug.pattern && (
-                      <>
-                        <div className="absolute inset-2 border border-current opacity-20" style={{ borderColor: rug.border }}></div>
-                        <div className="absolute inset-4 border border-current opacity-15" style={{ borderColor: rug.border }}></div>
-                        {/* Center medallion for oriental rugs */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{
-                          width: '30%', height: '40%',
-                          border: `2px solid ${rug.border}`,
-                          borderRadius: '50%',
-                          opacity: 0.25,
-                        }}></div>
-                      </>
+          {/* ── Slot picker (tap to fill) ── */}
+          <div className="w-full max-w-lg">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 px-1">Tap a spot to furnish it</h3>
+            <div className="flex gap-1.5 overflow-x-auto pb-1.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+              {template.slots.map(slot => {
+                const filled = filledSlots[slot.id]
+                const isActive = activeSlot === slot.id
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => filled ? clearSlot(slot.id) : setActiveSlot(slot.id)}
+                    className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium transition border ${
+                      filled
+                        ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                        : isActive
+                          ? 'bg-indigo-500 border-indigo-400 text-white'
+                          : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    <span className="mr-1">{CATEGORY_ICONS[slot.categories[0]] || '📦'}</span>
+                    {filled ? (
+                      <span>{filled.name.length > 12 ? filled.name.slice(0, 11) + '…' : filled.name} ✕</span>
+                    ) : (
+                      <span>{slot.label}</span>
                     )}
-                  </div>
-                )}
-
-                {/* ── Floor-zone slots (furniture) ── */}
-                {template.slots.filter(s => s.zone === 'floor').map(slot => {
-                  const filled = filledSlots[slot.id]
-                  // Map slot positions into the floor area (60% - 100% of height)
-                  const topPct = 60 + parseFloat(slot.y) * 0.4
-                  const leftPct = 12 + parseFloat(slot.x) * 0.76
-                  const wPct = parseFloat(slot.w) * 0.76
-                  const hPct = parseFloat(slot.h) * 0.4
-                  return (
-                    <button
-                      key={slot.id}
-                      onClick={() => filled ? clearSlot(slot.id) : setActiveSlot(slot.id)}
-                      className="absolute transition-all group"
-                      style={{ left: `${leftPct}%`, top: `${topPct}%`, width: `${wPct}%`, height: `${hPct}%`, zIndex: 10 }}
-                    >
-                      {filled ? (
-                        <div className="w-full h-full flex flex-col items-center justify-center relative">
-                          <span className="text-3xl drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }}>
-                            {CATEGORY_ICONS[filled.category] || '📦'}
-                          </span>
-                          <span className="text-xs font-semibold text-white bg-black/50 px-1.5 py-0.5 rounded mt-0.5 truncate max-w-full">
-                            {filled.name.length > 15 ? filled.name.slice(0, 14) + '…' : filled.name}
-                          </span>
-                          <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">×</div>
-                        </div>
-                      ) : (
-                        <div className="w-full h-full rounded-lg border-2 border-dashed border-white/25 hover:border-indigo-400/60 hover:bg-indigo-400/10 flex flex-col items-center justify-center transition-all">
-                          <span className="text-xl opacity-30 group-hover:opacity-60">{CATEGORY_ICONS[slot.categories[0]] || '📦'}</span>
-                          <span className="text-xs font-medium text-white/40 group-hover:text-white/70 mt-0.5">{slot.label}</span>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-
-              </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -583,19 +438,4 @@ export default function DesignEditorPage({ challenge, setPage }) {
       )}
     </div>
   )
-}
-
-// Utility: darken/lighten a hex color
-function adjustColor(hex, amount) {
-  try {
-    let r = parseInt(hex.slice(1, 3), 16) + amount
-    let g = parseInt(hex.slice(3, 5), 16) + amount
-    let b = parseInt(hex.slice(5, 7), 16) + amount
-    r = Math.max(0, Math.min(255, r))
-    g = Math.max(0, Math.min(255, g))
-    b = Math.max(0, Math.min(255, b))
-    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`
-  } catch {
-    return hex
-  }
 }
