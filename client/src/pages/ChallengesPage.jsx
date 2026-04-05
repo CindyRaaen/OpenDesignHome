@@ -98,6 +98,93 @@ function RoomPreview({ type }) {
       <rect x="140" y="128" width="18" height="22" rx="3" fill="none" stroke="#4F46E5" strokeWidth="1" strokeDasharray="3,2" opacity="0.4" />
     </svg>
   )
+
+  if (type === 'dining_room') return (
+    <svg viewBox="0 0 300 180" className="w-full h-full">
+      <rect x="30" y="0" width="240" height="110" fill="#f5e6c8" />
+      <rect x="30" y="0" width="240" height="3" fill="#e8d5a8" />
+      <polygon points="0,0 30,0 30,110 0,180" fill="#e8dcc0" />
+      <polygon points="300,0 270,0 270,110 300,180" fill="#e8dcc0" />
+      <polygon points="0,180 30,110 270,110 300,180" fill="#6b4226" />
+      <line x1="60" y1="110" x2="30" y2="180" stroke="#5a3520" strokeWidth="1" opacity="0.5" />
+      <line x1="150" y1="110" x2="150" y2="180" stroke="#5a3520" strokeWidth="1" opacity="0.5" />
+      <line x1="240" y1="110" x2="270" y2="180" stroke="#5a3520" strokeWidth="1" opacity="0.5" />
+      <rect x="60" y="18" width="50" height="50" rx="1" fill="#87CEEB" stroke="#f0ebe4" strokeWidth="3" />
+      <rect x="190" y="18" width="50" height="50" rx="1" fill="#87CEEB" stroke="#f0ebe4" strokeWidth="3" />
+      {/* Chandelier */}
+      <line x1="150" y1="0" x2="150" y2="18" stroke="#c8bfb0" strokeWidth="2" />
+      <ellipse cx="150" cy="22" rx="18" ry="6" fill="none" stroke="#d4a843" strokeWidth="2" />
+      <circle cx="142" cy="22" r="3" fill="#eab308" opacity="0.5" />
+      <circle cx="150" cy="22" r="3" fill="#eab308" opacity="0.5" />
+      <circle cx="158" cy="22" r="3" fill="#eab308" opacity="0.5" />
+      {/* Table placeholder */}
+      <rect x="85" y="120" width="100" height="45" rx="4" fill="none" stroke="#4F46E5" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.5" />
+      <text x="135" y="146" textAnchor="middle" fill="#4F46E5" fontSize="10" opacity="0.6">table</text>
+      <rect x="65" y="128" width="18" height="22" rx="3" fill="none" stroke="#4F46E5" strokeWidth="1" strokeDasharray="3,2" opacity="0.4" />
+      <rect x="190" y="128" width="18" height="22" rx="3" fill="none" stroke="#4F46E5" strokeWidth="1" strokeDasharray="3,2" opacity="0.4" />
+    </svg>
+  )
+
+  if (type === 'bathroom') return (
+    <svg viewBox="0 0 300 180" className="w-full h-full">
+      <rect x="30" y="0" width="240" height="110" fill="#e8edf4" />
+      <rect x="30" y="0" width="240" height="3" fill="#c5d0e0" />
+      <polygon points="0,0 30,0 30,110 0,180" fill="#dce3ee" />
+      <polygon points="300,0 270,0 270,110 300,180" fill="#dce3ee" />
+      <polygon points="0,180 30,110 270,110 300,180" fill="#e8e4e0" />
+      <line x1="80" y1="110" x2="65" y2="180" stroke="#d0ccc5" strokeWidth="1" opacity="0.5" />
+      <line x1="150" y1="110" x2="150" y2="180" stroke="#d0ccc5" strokeWidth="1" opacity="0.5" />
+      <line x1="220" y1="110" x2="235" y2="180" stroke="#d0ccc5" strokeWidth="1" opacity="0.5" />
+      {/* Window */}
+      <rect x="120" y="18" width="55" height="45" rx="1" fill="#87CEEB" stroke="#f0ebe4" strokeWidth="3" />
+      {/* Bathtub shape */}
+      <rect x="50" y="45" width="65" height="65" rx="8" fill="#f5f5f5" stroke="#ccc" strokeWidth="2" />
+      <ellipse cx="82" cy="55" rx="8" ry="4" fill="#87CEEB" opacity="0.3" />
+      {/* Vanity */}
+      <rect x="200" y="30" width="55" height="80" fill="#a08060" stroke="#8b7050" strokeWidth="1" />
+      <rect x="210" y="35" width="35" height="25" rx="3" fill="#c5d0e0" stroke="#a0b0c0" strokeWidth="1" />
+      <rect x="210" y="70" width="35" height="8" rx="2" fill="#87CEEB" opacity="0.4" />
+      {/* Plant placeholder */}
+      <rect x="50" y="130" width="25" height="30" rx="4" fill="none" stroke="#4F46E5" strokeWidth="1" strokeDasharray="3,2" opacity="0.4" />
+      <text x="62" y="148" textAnchor="middle" fill="#4F46E5" fontSize="8" opacity="0.5">plant</text>
+    </svg>
+  )
+
+  if (type === 'studio') return (
+    <svg viewBox="0 0 300 180" className="w-full h-full">
+      <rect x="30" y="0" width="240" height="110" fill="#f5f0eb" />
+      <rect x="30" y="0" width="240" height="3" fill="#e0d8cc" />
+      <polygon points="0,0 30,0 30,110 0,180" fill="#e8e0d8" />
+      <polygon points="300,0 270,0 270,110 300,180" fill="#e8e0d8" />
+      <polygon points="0,180 30,110 270,110 300,180" fill="#c8945a" />
+      <line x1="60" y1="110" x2="30" y2="180" stroke="#b8844a" strokeWidth="1" opacity="0.4" />
+      <line x1="150" y1="110" x2="150" y2="180" stroke="#b8844a" strokeWidth="1" opacity="0.4" />
+      <line x1="240" y1="110" x2="270" y2="180" stroke="#b8844a" strokeWidth="1" opacity="0.4" />
+      <rect x="55" y="18" width="45" height="45" rx="1" fill="#87CEEB" stroke="#f0ebe4" strokeWidth="3" />
+      <rect x="200" y="18" width="45" height="45" rx="1" fill="#87CEEB" stroke="#f0ebe4" strokeWidth="3" />
+      {/* Sofa placeholder */}
+      <rect x="45" y="125" width="70" height="35" rx="4" fill="none" stroke="#4F46E5" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.5" />
+      <text x="80" y="146" textAnchor="middle" fill="#4F46E5" fontSize="9" opacity="0.6">sofa</text>
+      {/* Desk placeholder */}
+      <rect x="170" y="120" width="55" height="28" rx="3" fill="none" stroke="#4F46E5" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.5" />
+      <text x="197" y="138" textAnchor="middle" fill="#4F46E5" fontSize="9" opacity="0.6">desk</text>
+      {/* Art placeholder */}
+      <rect x="130" y="20" width="30" height="24" rx="1" fill="none" stroke="#4F46E5" strokeWidth="1" strokeDasharray="3,2" opacity="0.4" />
+    </svg>
+  )
+
+  // Default fallback
+  return (
+    <svg viewBox="0 0 300 180" className="w-full h-full">
+      <rect x="30" y="0" width="240" height="110" fill="#f5f0eb" />
+      <polygon points="0,0 30,0 30,110 0,180" fill="#e8e0d8" />
+      <polygon points="300,0 270,0 270,110 300,180" fill="#e8e0d8" />
+      <polygon points="0,180 30,110 270,110 300,180" fill="#d4a86a" />
+      <rect x="100" y="20" width="60" height="50" fill="#87CEEB" stroke="#f0ebe4" strokeWidth="3" />
+      <rect x="90" y="125" width="80" height="35" rx="4" fill="none" stroke="#4F46E5" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.5" />
+      <text x="130" y="146" textAnchor="middle" fill="#4F46E5" fontSize="10" opacity="0.6">design here</text>
+    </svg>
+  )
 }
 
 export default function ChallengesPage({ setPage, setSelectedChallenge }) {

@@ -80,6 +80,52 @@ const ROOM_TEMPLATES = {
       { id: 'lamp1',      label: 'Pendant Light',    zone: 'wall',  x: '25%', y: '5%',  w: '14%', h: '16%', categories: ['lamps'] },
       { id: 'wallart1',   label: 'Wall Art',         zone: 'wall',  x: '58%', y: '10%', w: '18%', h: '20%', categories: ['art'] },
     ]
+  },
+  dining_room: {
+    label: 'Dining Room',
+    hasFireplace: false,
+    windowCount: 2,
+    slots: [
+      { id: 'table',      label: 'Dining Table',     zone: 'floor', x: '22%', y: '42%', w: '35%', h: '30%', categories: ['tables'] },
+      { id: 'chair1',     label: 'Chair 1',          zone: 'floor', x: '12%', y: '45%', w: '12%', h: '18%', categories: ['chairs'] },
+      { id: 'chair2',     label: 'Chair 2',          zone: 'floor', x: '55%', y: '45%', w: '12%', h: '18%', categories: ['chairs'] },
+      { id: 'chair3',     label: 'Chair 3',          zone: 'floor', x: '28%', y: '68%', w: '12%', h: '18%', categories: ['chairs'] },
+      { id: 'chair4',     label: 'Chair 4',          zone: 'floor', x: '42%', y: '68%', w: '12%', h: '18%', categories: ['chairs'] },
+      { id: 'sideboard',  label: 'Sideboard',        zone: 'floor', x: '70%', y: '40%', w: '22%', h: '18%', categories: ['tables'] },
+      { id: 'lamp1',      label: 'Chandelier',       zone: 'wall',  x: '32%', y: '3%',  w: '16%', h: '18%', categories: ['lamps'] },
+      { id: 'wallart1',   label: 'Wall Art',         zone: 'wall',  x: '8%',  y: '12%', w: '18%', h: '22%', categories: ['art'] },
+      { id: 'plant1',     label: 'Corner Plant',     zone: 'floor', x: '82%', y: '55%', w: '12%', h: '18%', categories: ['plants'] },
+    ]
+  },
+  bathroom: {
+    label: 'Bathroom',
+    hasFireplace: false,
+    windowCount: 1,
+    slots: [
+      { id: 'plant1',     label: 'Plant',            zone: 'floor', x: '8%',  y: '50%', w: '14%', h: '20%', categories: ['plants'] },
+      { id: 'chair1',     label: 'Vanity Stool',     zone: 'floor', x: '55%', y: '55%', w: '16%', h: '20%', categories: ['chairs'] },
+      { id: 'table1',     label: 'Storage Table',    zone: 'floor', x: '75%', y: '48%', w: '16%', h: '18%', categories: ['tables'] },
+      { id: 'lamp1',      label: 'Vanity Light',     zone: 'wall',  x: '55%', y: '8%',  w: '16%', h: '14%', categories: ['lamps'] },
+      { id: 'wallart1',   label: 'Wall Art',         zone: 'wall',  x: '10%', y: '12%', w: '16%', h: '20%', categories: ['art'] },
+      { id: 'wallart2',   label: 'Mirror Art',       zone: 'wall',  x: '55%', y: '25%', w: '14%', h: '16%', categories: ['art'] },
+    ]
+  },
+  studio: {
+    label: 'Studio Apartment',
+    hasFireplace: false,
+    windowCount: 2,
+    slots: [
+      { id: 'sofa',       label: 'Sofa / Daybed',    zone: 'floor', x: '5%',  y: '45%', w: '30%', h: '30%', categories: ['sofas'] },
+      { id: 'table',      label: 'Desk / Table',     zone: 'floor', x: '55%', y: '38%', w: '22%', h: '18%', categories: ['tables'] },
+      { id: 'chair1',     label: 'Desk Chair',       zone: 'floor', x: '58%', y: '55%', w: '14%', h: '18%', categories: ['chairs'] },
+      { id: 'sidetable',  label: 'Side Table',       zone: 'floor', x: '35%', y: '52%', w: '14%', h: '14%', categories: ['tables'] },
+      { id: 'lamp1',      label: 'Floor Lamp',       zone: 'floor', x: '80%', y: '40%', w: '10%', h: '25%', categories: ['lamps'] },
+      { id: 'plant1',     label: 'Plant',            zone: 'floor', x: '82%', y: '58%', w: '12%', h: '18%', categories: ['plants'] },
+      { id: 'plant2',     label: 'Shelf Plant',      zone: 'floor', x: '3%',  y: '35%', w: '10%', h: '14%', categories: ['plants'] },
+      { id: 'wallart1',   label: 'Wall Art',         zone: 'wall',  x: '15%', y: '10%', w: '20%', h: '22%', categories: ['art'] },
+      { id: 'wallart2',   label: 'Wall Art 2',       zone: 'wall',  x: '60%', y: '8%',  w: '16%', h: '20%', categories: ['art'] },
+      { id: 'lamp2',      label: 'Table Lamp',       zone: 'floor', x: '36%', y: '45%', w: '10%', h: '14%', categories: ['lamps'] },
+    ]
   }
 }
 

@@ -197,22 +197,32 @@ async function createLeaderboardTable() {
 async function seedSampleData() {
   try {
     const challengeCount = await db.query(`SELECT COUNT(*) FROM odh_challenges`);
-    if (parseInt(challengeCount.rows[0].count) === 0) {
+    if (parseInt(challengeCount.rows[0].count) < 6) {
+      // Clear and reseed with more room types
+      if (parseInt(challengeCount.rows[0].count) > 0) {
+        await db.query(`DELETE FROM odh_challenges`);
+      }
       const now = new Date();
       const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       const in5Days = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+      const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const in10Days = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
 
-      await db.query(`
-        INSERT INTO odh_challenges (title, description, room_type, difficulty, theme, ends_at)
-        VALUES 
-          ($1, $2, $3, $4, $5, $6),
-          ($7, $8, $9, $10, $11, $12),
-          ($13, $14, $15, $16, $17, $18)
-      `, [
-        'Modern Living Room Refresh', 'Design a contemporary living space', 'living_room', 'casual', 'modern', in7Days,
-        'Cozy Bedroom Retreat', 'Create a relaxing bedroom sanctuary', 'bedroom', 'casual', 'cozy', in5Days,
-        'Dream Kitchen Makeover', 'Transform a kitchen into a chef\'s paradise', 'kitchen', 'intermediate', 'modern', in7Days
-      ]);
+      const challenges = [
+        ['Modern Living Room Refresh', 'Design a contemporary living space with clean lines', 'living_room', 'casual', 'modern', in7Days],
+        ['Cozy Bedroom Retreat', 'Create a relaxing bedroom sanctuary', 'bedroom', 'casual', 'cozy', in5Days],
+        ['Dream Kitchen Makeover', 'Transform a kitchen into a chef\'s paradise', 'kitchen', 'intermediate', 'modern', in7Days],
+        ['Elegant Dinner Party', 'Set the scene for an unforgettable dinner party', 'dining_room', 'intermediate', 'traditional', in10Days],
+        ['Spa Bathroom Oasis', 'Design a luxurious bathroom retreat', 'bathroom', 'casual', 'modern', in3Days],
+        ['Small Space Big Style', 'Make a studio apartment feel like home', 'studio', 'expert', 'modern', in5Days],
+      ];
+
+      for (const [title, description, room_type, difficulty, theme, ends_at] of challenges) {
+        await db.query(
+          `INSERT INTO odh_challenges (title, description, room_type, difficulty, theme, ends_at) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [title, description, room_type, difficulty, theme, ends_at]
+        );
+      }
     }
   } catch (err) {
     console.error('Error seeding challenges:', err);
@@ -223,7 +233,7 @@ async function seedSampleData() {
 async function seedFurniture() {
   try {
     const furnitureCount = await db.query(`SELECT COUNT(*) FROM odh_furniture`);
-    if (parseInt(furnitureCount.rows[0].count) < 40) {
+    if (parseInt(furnitureCount.rows[0].count) < 48) {
       // Clear old seed data and re-seed with expanded catalog
       if (parseInt(furnitureCount.rows[0].count) > 0) {
         await db.query(`DELETE FROM odh_furniture`);
