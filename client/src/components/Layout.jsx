@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Menu, X, Trophy, Paintbrush, ThumbsUp, Medal, Sofa, User, LogOut, Home } from 'lucide-react'
+import { Menu, X, Trophy, Paintbrush, ThumbsUp, Medal, Sofa, User, LogOut, Home, PencilRuler, Box, Package } from 'lucide-react'
 
 export default function Layout({ page, setPage, user, onLogout, children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -16,6 +16,9 @@ export default function Layout({ page, setPage, user, onLogout, children }) {
     { id: 'voting', icon: ThumbsUp, label: 'Vote' },
     { id: 'leaderboard', icon: Medal, label: 'Leaders' },
     { id: 'catalog', icon: Sofa, label: 'Browse' },
+    { id: 'floor-plan', icon: PencilRuler, label: 'Floor Plan' },
+    { id: 'room-viewer', icon: Box, label: '3D Room' },
+    { id: 'products', icon: Package, label: 'Products' },
     { id: 'profile', icon: User, label: 'Profile' },
   ]
 

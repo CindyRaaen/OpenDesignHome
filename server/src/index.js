@@ -10,6 +10,9 @@ import furnitureRouter from './routes/furniture.js';
 import profileRouter from './routes/profile.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import publicChallengesRouter from './routes/public-challenges.js';
+import productsRouter from './routes/products.js';
+import roomPlannerRouter from './routes/roomPlanner.js';
+import renderer3dRouter from './routes/renderer3d-products.js';
 
 const app = express();
 const PORT = 3029;
@@ -117,6 +120,122 @@ async function initializeDatabase() {
       )
     `);
   } catch (err) {
+
+    // ── OID-ported tables: vendors, products, floor plans, tear sheets ──
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_vendors (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        "vendorCode" VARCHAR(50),
+        type VARCHAR(50) DEFAULT 'furniture',
+        website TEXT,
+        "contactEmail" VARCHAR(255),
+        "contactPhone" VARCHAR(50),
+        notes TEXT,
+        status VARCHAR(20) DEFAULT 'active',
+        "logoUrl" TEXT,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_products (
+        id SERIAL PRIMARY KEY,
+        "vendorId" INTEGER REFERENCES oia_vendors(id),
+        name VARCHAR(255) NOT NULL,
+        sku VARCHAR(100),
+        category VARCHAR(100),
+        subcategory VARCHAR(100),
+        description TEXT,
+        width DECIMAL(8,2),
+        depth DECIMAL(8,2),
+        height DECIMAL(8,2),
+        unit VARCHAR(10) DEFAULT 'inches',
+        material VARCHAR(255),
+        finish VARCHAR(255),
+        color VARCHAR(100),
+        "colorHex" VARCHAR(7),
+        price DECIMAL(10,2),
+        "retailPrice" DECIMAL(10,2),
+        "leadTime" VARCHAR(100),
+        "imageUrl" TEXT,
+        "thumbnailUrl" TEXT,
+        "sourceUrl" TEXT,
+        dimensions JSONB DEFAULT '{}',
+        colors JSONB DEFAULT '[]',
+        tags JSONB DEFAULT '[]',
+        status VARCHAR(20) DEFAULT 'active',
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_floor_plans (
+        id SERIAL PRIMARY KEY,
+        "projectId" INTEGER,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        "canvasData" JSONB DEFAULT '{}',
+        width DECIMAL(8,2),
+        height DECIMAL(8,2),
+        unit VARCHAR(10) DEFAULT 'feet',
+        thumbnail TEXT,
+        status VARCHAR(20) DEFAULT 'draft',
+        "createdBy" INTEGER,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_tear_sheets (
+        id SERIAL PRIMARY KEY,
+        "productId" INTEGER REFERENCES oia_products(id),
+        name VARCHAR(255),
+        room VARCHAR(100),
+        notes TEXT,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_project_tear_sheets (
+        id SERIAL PRIMARY KEY,
+        "projectId" INTEGER,
+        "tearSheetId" INTEGER REFERENCES oia_tear_sheets(id),
+        "furnitureItemId" VARCHAR(100),
+        "position3D" JSONB DEFAULT '{}',
+        rotation DECIMAL(5,2) DEFAULT 0,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_favorites (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER,
+        "productId" INTEGER REFERENCES oia_products(id),
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("userId", "productId")
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS oia_material_samples (
+        id SERIAL PRIMARY KEY,
+        "productId" INTEGER REFERENCES oia_products(id),
+        name VARCHAR(255),
+        material VARCHAR(255),
+        finish VARCHAR(255),
+        "colorHex" VARCHAR(7),
+        "imageUrl" TEXT,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log('OID tables initialized (vendors, products, floor_plans, tear_sheets)');
     console.error('Database initialization error:', err);
   }
 }
@@ -416,6 +535,9 @@ app.use('/api/furniture', authMiddleware, furnitureRouter);
 app.use('/api/profile', authMiddleware, profileRouter);
 app.use('/api/leaderboard', authMiddleware, leaderboardRouter);
 app.use('/api/public/challenges', publicChallengesRouter);
+app.use('/api/products', authMiddleware, productsRouter);
+app.use('/api/room-planner', authMiddleware, roomPlannerRouter);
+app.use('/api/renderer3d', authMiddleware, renderer3dRouter);
 
 // Health check + debug
 app.get('/api/health', async (req, res) => {

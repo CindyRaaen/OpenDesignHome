@@ -9,6 +9,9 @@ const VotingPage = lazy(() => import('./pages/VotingPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const FurnitureCatalogPage = lazy(() => import('./pages/FurnitureCatalogPage'))
+const FloorPlanPage = lazy(() => import('./pages/FloorPlanPage'))
+const ProductsPage = lazy(() => import('./pages/ProductsPage'))
+const RoomViewerPage = lazy(() => import('./pages/RoomViewerPage'))
 
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem('odh_token'))
@@ -65,6 +68,12 @@ export default function App() {
         return <ProfilePage user={user} setUser={setUser} />
       case 'catalog':
         return <FurnitureCatalogPage />
+      case 'floor-plan':
+        return <FloorPlanPage setPage={setPage} />
+      case 'products':
+        return <ProductsPage />
+      case 'room-viewer':
+        return <RoomViewerPage setPage={setPage} />
       default:
         return <ChallengesPage />
     }
