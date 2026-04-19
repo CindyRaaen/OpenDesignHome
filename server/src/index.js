@@ -24,6 +24,11 @@ app.use(express.json());
 
 // Auth middleware
 const authMiddleware = (req, res, next) => {
+  // Dev mode: allow unauthenticated requests
+  if (!req.headers.authorization) {
+    req.user = { id: 1, username: "designer" };
+    return next();
+  }
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });

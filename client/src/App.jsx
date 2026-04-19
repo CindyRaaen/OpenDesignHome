@@ -13,15 +13,19 @@ const FloorPlanPage = lazy(() => import('./pages/FloorPlanPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const RoomViewerPage = lazy(() => import('./pages/RoomViewerPage'))
 
+// Dev mode — skip auth entirely
+const DEV_MODE = true
+const DEV_USER = { id: 1, username: 'designer', name: 'Designer' }
+
 export default function App() {
-  const [token, setToken] = useState(() => localStorage.getItem('odh_token'))
-  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(() => DEV_MODE ? 'dev' : localStorage.getItem('odh_token'))
+  const [user, setUser] = useState(DEV_MODE ? DEV_USER : null)
   const [page, setPage] = useState('challenges')
   const [selectedChallenge, setSelectedChallenge] = useState(null)
-  const [loading, setLoading] = useState(!!token)
+  const [loading, setLoading] = useState(DEV_MODE ? false : !!token)
 
   useEffect(() => {
-    if (!token) return
+    if (DEV_MODE || !token) return
     setLoading(true)
     api.get('/api/auth/me')
       .then(setUser)
@@ -40,13 +44,14 @@ export default function App() {
   }
 
   const handleLogout = () => {
+    if (DEV_MODE) return
     localStorage.removeItem('odh_token')
     setToken(null)
     setUser(null)
     setPage('challenges')
   }
 
-  if (!token) {
+  if (!DEV_MODE && !token) {
     return <LoginScreen onLogin={handleLogin} />
   }
 
