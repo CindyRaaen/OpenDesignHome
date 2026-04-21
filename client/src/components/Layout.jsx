@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Menu, X, Trophy, Paintbrush, ThumbsUp, Medal, Sofa, User, LogOut, Home, PencilRuler, Box, Package } from 'lucide-react'
+import { Menu, X, LogOut, Briefcase, FileText, Scale, Users, User, Palette } from 'lucide-react'
 
 export default function Layout({ page, setPage, user, onLogout, children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -11,15 +11,14 @@ export default function Layout({ page, setPage, user, onLogout, children }) {
     return () => window.removeEventListener('resize', handler)
   }, [])
 
+  // New elevated nav — the game loop
   const navItems = [
-    { id: 'challenges', icon: Trophy, label: 'Challenges' },
-    { id: 'voting', icon: ThumbsUp, label: 'Vote' },
-    { id: 'leaderboard', icon: Medal, label: 'Leaders' },
-    { id: 'catalog', icon: Sofa, label: 'Browse' },
-    { id: 'floor-plan', icon: PencilRuler, label: 'Floor Plan' },
-    { id: 'room-viewer', icon: Box, label: '3D Room' },
-    { id: 'products', icon: Package, label: 'Products' },
-    { id: 'profile', icon: User, label: 'Profile' },
+    { id: 'studio', icon: Briefcase, label: 'Studio' },
+    { id: 'my-designs', icon: Palette, label: 'My Designs' },
+    { id: 'briefs', icon: FileText, label: 'Briefs' },
+    { id: 'jury', icon: Scale, label: 'Jury' },
+    { id: 'community', icon: Users, label: 'Community' },
+    { id: 'portfolio', icon: User, label: 'Portfolio' },
   ]
 
   const handleNavClick = (id) => {
@@ -27,17 +26,23 @@ export default function Layout({ page, setPage, user, onLogout, children }) {
     setIsMobileMenuOpen(false)
   }
 
+  // Hide chrome when inside challenge flow
+  const isFullscreen = page === 'challenge-flow'
+  if (isFullscreen) return <>{children}</>
+
   const NavLink = ({ item }) => (
     <button
       onClick={() => handleNavClick(item.id)}
-      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition w-full ${
-        page === item.id
-          ? 'bg-indigo-500/20 text-indigo-400'
-          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-      }`}
+      className="nav-link"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 10,
+        width: '100%', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+        background: page === item.id ? 'rgba(200,170,120,0.12)' : 'transparent',
+        color: page === item.id ? '#c8aa78' : '#6a6258',
+      }}
     >
       <item.icon size={18} />
-      <span className="font-medium text-sm">{item.label}</span>
+      <span style={{ fontSize: 14, fontWeight: page === item.id ? 500 : 400 }}>{item.label}</span>
     </button>
   )
 
@@ -45,59 +50,53 @@ export default function Layout({ page, setPage, user, onLogout, children }) {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0a0a0a', color: '#e8e4df' }}>
         {/* Mobile top bar */}
-        <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
-          <button onClick={() => setPage('challenges')} className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-indigo-500 rounded-lg flex items-center justify-center">
-              <Home size={14} className="text-white" />
+        <div style={{
+          background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          position: 'sticky', top: 0, zIndex: 40
+        }}>
+          <button onClick={() => setPage('studio')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #c8aa78, #8B6F47)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: -0.5 }}>DS</span>
             </div>
-            <span className="font-bold text-base text-white">Open Design Home</span>
+            <span style={{ fontFamily: 'Georgia, serif', fontSize: 15, color: '#f5f0e8' }}>Design Studio</span>
           </button>
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-gray-400 hover:text-white p-1"
-          >
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ background: 'none', border: 'none', color: '#6a6258', cursor: 'pointer', padding: 4 }}>
             {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
-        {/* Mobile dropdown menu */}
         {isMobileMenuOpen && (
-          <div className="bg-gray-800 border-b border-gray-700 p-3 space-y-1 absolute top-14 left-0 right-0 z-30 shadow-xl">
-            <div className="px-4 py-2 mb-1">
-              <p className="text-white font-medium text-sm">{displayName}</p>
-              <p className="text-gray-500 text-xs">@{user?.username}</p>
+          <div style={{
+            background: '#111', borderBottom: '1px solid rgba(255,255,255,0.06)',
+            padding: 12, position: 'absolute', top: 52, left: 0, right: 0, zIndex: 30, boxShadow: '0 16px 48px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ padding: '8px 16px', marginBottom: 8 }}>
+              <p style={{ color: '#e8e4df', fontSize: 14, fontWeight: 500 }}>{displayName}</p>
+              <p style={{ color: '#5a5248', fontSize: 12 }}>@{user?.username}</p>
             </div>
-            {navItems.map((item) => (
-              <NavLink key={item.id} item={item} />
-            ))}
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition"
-            >
-              <LogOut size={18} />
-              <span className="font-medium text-sm">Sign Out</span>
-            </button>
+            {navItems.map(item => <NavLink key={item.id} item={item} />)}
           </div>
         )}
 
-        <main className="flex-1 overflow-auto pb-20">
-          {children}
-        </main>
+        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>{children}</main>
 
         {/* Bottom tab bar */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-1 py-1.5 flex justify-around safe-area-bottom">
-          {navItems.slice(0, 5).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition min-w-0 ${
-                page === item.id ? 'text-indigo-400' : 'text-gray-500'
-              }`}
-            >
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '6px 4px', display: 'flex', justifyContent: 'space-around'
+        }}>
+          {navItems.map(item => (
+            <button key={item.id} onClick={() => handleNavClick(item.id)} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              background: 'transparent', color: page === item.id ? '#c8aa78' : '#4a4238', transition: 'color 0.2s'
+            }}>
               <item.icon size={19} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -107,41 +106,44 @@ export default function Layout({ page, setPage, user, onLogout, children }) {
 
   // Desktop layout
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
-      <aside className="w-56 bg-gray-900 border-r border-gray-800 p-4 flex flex-col sticky top-0 h-screen overflow-y-auto">
-        <button onClick={() => setPage('challenges')} className="flex items-center gap-2.5 mb-6 px-2">
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-            <Home size={16} className="text-white" />
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a', color: '#e8e4df' }}>
+      <aside style={{
+        width: 220, background: '#0a0a0a', borderRight: '1px solid rgba(255,255,255,0.06)',
+        padding: 20, display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto'
+      }}>
+        {/* Logo */}
+        <button onClick={() => setPage('studio')} style={{
+          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36, padding: '4px 8px',
+          background: 'none', border: 'none', cursor: 'pointer'
+        }}>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #c8aa78, #8B6F47)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: -0.5 }}>DS</span>
           </div>
           <div>
-            <h1 className="font-bold text-sm text-white leading-tight">Open Design Home</h1>
+            <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 14, color: '#f5f0e8', fontWeight: 500, lineHeight: 1.2 }}>Design</h1>
+            <p style={{ fontSize: 10, color: '#5a5248', letterSpacing: 2, textTransform: 'uppercase' }}>Studio</p>
           </div>
         </button>
 
-        <nav className="flex-1 space-y-0.5">
-          {navItems.map((item) => (
-            <NavLink key={item.id} item={item} />
-          ))}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {navItems.map(item => <NavLink key={item.id} item={item} />)}
         </nav>
 
-        <div className="border-t border-gray-800 pt-3 mt-3">
-          <div className="px-3 mb-2">
-            <p className="text-white font-medium text-sm">{displayName}</p>
-            <p className="text-gray-500 text-xs">@{user?.username}</p>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16, marginTop: 16 }}>
+          <div style={{ padding: '0 16px', marginBottom: 12 }}>
+            <p style={{ color: '#e8e4df', fontSize: 13, fontWeight: 500 }}>{displayName}</p>
+            <p style={{ color: '#5a5248', fontSize: 11 }}>@{user?.username}</p>
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-800 hover:text-white transition w-full"
-          >
-            <LogOut size={16} />
-            <span className="text-sm">Sign Out</span>
+          <button onClick={onLogout} style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderRadius: 8, width: '100%',
+            background: 'transparent', border: 'none', color: '#4a4238', cursor: 'pointer', fontSize: 13
+          }}>
+            <LogOut size={15} /> Sign Out
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+      <main style={{ flex: 1, overflowY: 'auto' }}>{children}</main>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 {
-  "name": "open-design-home-server",
+  "name": "opendesign-studio-server",
   "version": "0.1.0",
-  "description": "Open Design Home - Server",
+  "description": "OpenDesign Studio - Server",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

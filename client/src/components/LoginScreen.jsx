@@ -95,9 +95,9 @@ export default function LoginScreen({ onLogin }) {
         </div>
 
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-1">Open Design Home</h1>
-          <p className="text-gray-400">Design rooms. Pick furniture. Compete with friends.</p>
-          <p className="text-indigo-400 text-sm font-medium mt-1">100% Free — No In-App Purchases</p>
+          <h1 className="text-3xl font-bold text-white mb-1">OpenDesign Studio</h1>
+          <p className="text-gray-600 text-xs tracking-widest uppercase mt-1 mb-3">Part of the OpenScaffold ecosystem</p>
+          <p className="text-gray-400">Design rooms. Get judged by AI. Compete for real prizes.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-gray-800/80 rounded-xl p-5 shadow-xl border border-gray-700/50 space-y-3">

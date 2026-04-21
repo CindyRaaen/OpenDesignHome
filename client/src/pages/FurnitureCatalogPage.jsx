@@ -4,17 +4,17 @@ import { api } from '../utils/api'
 
 export default function FurnitureCatalogPage() {
   const [furniture, setFurniture] = useState([])
-  const [categories, setCategories] = useState(['Seating', 'Tables', 'Storage', 'Decor', 'Lighting'])
+  const [categories] = useState(['sofas', 'chairs', 'tables', 'lamps', 'art', 'plants'])
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [styleFilter, setStyleFilter] = useState('all')
-  const [styles] = useState(['Modern', 'Classic', 'Rustic', 'Contemporary', 'Minimalist'])
+  const [styles] = useState(['modern', 'mid-century', 'scandinavian', 'traditional', 'bohemian'])
   const [loading, setLoading] = useState(true)
   const [selectedItem, setSelectedItem] = useState(null)
 
   useEffect(() => {
     setLoading(true)
-    api.get('/api/furniture/catalog')
+    api.get('/api/furniture')
       .then(setFurniture)
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -23,7 +23,10 @@ export default function FurnitureCatalogPage() {
   const filteredFurniture = furniture.filter((item) => {
     if (selectedCategory !== 'all' && item.category !== selectedCategory) return false
     if (styleFilter !== 'all' && item.style !== styleFilter) return false
-    if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      if (!(item.name?.toLowerCase().includes(q) || item.brand?.toLowerCase().includes(q) || item.designer?.toLowerCase().includes(q) || item.material_name?.toLowerCase().includes(q))) return false
+    }
     return true
   })
 
@@ -98,15 +101,18 @@ export default function FurnitureCatalogPage() {
           {filteredFurniture.map((item) => (
             <div key={item.id} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:border-indigo-500 transition group">
               <div className="bg-gray-700 h-48 flex items-center justify-center relative overflow-hidden">
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition" />
+                {(item.image_url || item.imageUrl) ? (
+                  <img src={item.image_url || item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition" />
                 ) : (
-                  <div className="text-4xl">{item.emoji || '🛋️'}</div>
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: item.color_hex || '#333' }}>
+                    <span className="text-4xl opacity-40">🛋️</span>
+                  </div>
                 )}
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-white mb-1">{item.name}</h3>
-                <p className="text-sm text-gray-400 mb-2">{item.brand}</p>
+                <p className="text-sm text-gray-400 mb-1">{item.brand}</p>
+                {item.designer && <p className="text-xs text-gray-500 mb-2">by {item.designer}</p>}
 
                 <div className="flex gap-2 mb-3 flex-wrap">
                   {item.style && (
@@ -119,10 +125,15 @@ export default function FurnitureCatalogPage() {
                       {item.category}
                     </span>
                   )}
+                  {item.material_name && (
+                    <span className="bg-amber-900 text-amber-200 px-2 py-1 rounded text-xs font-semibold">
+                      {item.material_name}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <p className="text-lg font-bold text-indigo-400">${item.price}</p>
+                  <p className="text-lg font-bold text-indigo-400">${(item.price_usd || item.retail_price || item.price || 0).toLocaleString()}</p>
                   <button
                     onClick={() => setSelectedItem(item)}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded transition flex items-center gap-1"
@@ -151,28 +162,48 @@ export default function FurnitureCatalogPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="bg-gray-700 h-40 flex items-center justify-center rounded">
-                {selectedItem.imageUrl ? (
-                  <img src={selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover rounded" />
+              <div className="bg-gray-700 h-40 flex items-center justify-center rounded overflow-hidden">
+                {(selectedItem.image_url || selectedItem.imageUrl) ? (
+                  <img src={selectedItem.image_url || selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="text-5xl">{selectedItem.emoji || '🛋️'}</div>
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: selectedItem.color_hex || '#333' }}>
+                    <span className="text-5xl opacity-40">🛋️</span>
+                  </div>
                 )}
               </div>
 
               <div>
                 <p className="text-gray-400 text-sm">Brand</p>
                 <p className="text-white font-semibold">{selectedItem.brand}</p>
+                {selectedItem.designer && <p className="text-gray-400 text-sm mt-1">Designed by {selectedItem.designer}</p>}
               </div>
+
+              {selectedItem.collection_name && (
+                <div>
+                  <p className="text-gray-400 text-sm">Collection</p>
+                  <p className="text-white text-sm">{selectedItem.collection_name}</p>
+                </div>
+              )}
 
               <div>
                 <p className="text-gray-400 text-sm">Price</p>
-                <p className="text-2xl font-bold text-indigo-400">${selectedItem.price}</p>
+                <p className="text-2xl font-bold text-indigo-400">${(selectedItem.price_usd || selectedItem.retail_price || selectedItem.price || 0).toLocaleString()}</p>
+                {selectedItem.retail_price && selectedItem.price_usd && selectedItem.retail_price !== selectedItem.price_usd && (
+                  <p className="text-xs text-gray-500">Retail: ${selectedItem.retail_price.toLocaleString()}</p>
+                )}
               </div>
 
-              {selectedItem.description && (
+              {selectedItem.material_name && (
                 <div>
-                  <p className="text-gray-400 text-sm">Description</p>
-                  <p className="text-white text-sm">{selectedItem.description}</p>
+                  <p className="text-gray-400 text-sm">Material</p>
+                  <p className="text-white text-sm">{selectedItem.material_name}</p>
+                </div>
+              )}
+
+              {(selectedItem.width_inches || selectedItem.depth_inches || selectedItem.height_inches) && (
+                <div>
+                  <p className="text-gray-400 text-sm">Dimensions</p>
+                  <p className="text-white text-sm">{selectedItem.width_inches}"W × {selectedItem.depth_inches}"D × {selectedItem.height_inches}"H</p>
                 </div>
               )}
 

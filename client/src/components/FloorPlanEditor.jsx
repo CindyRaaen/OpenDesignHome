@@ -1202,6 +1202,7 @@ export default function FloorPlanEditor({ initialData, onSave, canvasWidth = 800
 
     // Grid (layer-aware)
     if (includeGrid && showGrid && layers.grid) {
+      // 6-inch minor grid (every GRID_SIZE px)
       ctx.strokeStyle = '#e2e8f0'
       ctx.lineWidth = 0.5
       for (let x = 0; x <= dimensions.width; x += GRID_SIZE) {
@@ -1210,14 +1211,32 @@ export default function FloorPlanEditor({ initialData, onSave, canvasWidth = 800
       for (let y = 0; y <= dimensions.height; y += GRID_SIZE) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(dimensions.width, y); ctx.stroke()
       }
+      // 1-foot major grid (every 2 grid units = 12")
+      const footPx = GRID_SIZE * 2
       ctx.strokeStyle = '#cbd5e1'
       ctx.lineWidth = 0.8
-      for (let x = 0; x <= dimensions.width; x += GRID_SIZE * 5) {
+      for (let x = 0; x <= dimensions.width; x += footPx) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, dimensions.height); ctx.stroke()
       }
-      for (let y = 0; y <= dimensions.height; y += GRID_SIZE * 5) {
+      for (let y = 0; y <= dimensions.height; y += footPx) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(dimensions.width, y); ctx.stroke()
       }
+      // Foot-mark labels along top and left edges
+      ctx.fillStyle = '#94a3b8'
+      ctx.font = '9px system-ui, sans-serif'
+      ctx.textAlign = 'center'
+      for (let x = footPx; x < dimensions.width; x += footPx) {
+        const ft = Math.round(x / footPx)
+        ctx.fillText(`${ft}'`, x, -4)
+      }
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      for (let y = footPx; y < dimensions.height; y += footPx) {
+        const ft = Math.round(y / footPx)
+        ctx.fillText(`${ft}'`, -6, y)
+      }
+      ctx.textAlign = 'start'
+      ctx.textBaseline = 'alphabetic'
     }
 
     // Border

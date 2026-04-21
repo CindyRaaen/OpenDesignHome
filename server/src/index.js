@@ -2,6 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import https from 'https';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 import db from './db.js';
 import challengesRouter from './routes/challenges.js';
 import designsRouter from './routes/designs.js';
@@ -13,6 +19,7 @@ import publicChallengesRouter from './routes/public-challenges.js';
 import productsRouter from './routes/products.js';
 import roomPlannerRouter from './routes/roomPlanner.js';
 import renderer3dRouter from './routes/renderer3d-products.js';
+import scoringRouter from './routes/scoring.js';
 
 const app = express();
 const PORT = 3029;
@@ -125,7 +132,10 @@ async function initializeDatabase() {
       )
     `);
   } catch (err) {
+    console.error('Error creating core tables:', err);
+  }
 
+  try {
     // ── OID-ported tables: vendors, products, floor plans, tear sheets ──
     await db.query(`
       CREATE TABLE IF NOT EXISTS oia_vendors (
@@ -241,6 +251,7 @@ async function initializeDatabase() {
     `);
 
     console.log('OID tables initialized (vendors, products, floor_plans, tear_sheets)');
+  } catch (err) {
     console.error('Database initialization error:', err);
   }
 }
@@ -543,6 +554,79 @@ app.use('/api/public/challenges', publicChallengesRouter);
 app.use('/api/products', authMiddleware, productsRouter);
 app.use('/api/room-planner', authMiddleware, roomPlannerRouter);
 app.use('/api/renderer3d', authMiddleware, renderer3dRouter);
+app.use('/api/scoring', scoringRouter); // No auth required — scoring is stateless
+
+// ── Image proxy (disk cache locally, CDN edge cache on Vercel) ──
+const IS_SERVERLESS = !!process.env.VERCEL;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const IMAGE_CACHE_DIR = path.join(__dirname, '..', '.image-cache');
+if (!IS_SERVERLESS && !fs.existsSync(IMAGE_CACHE_DIR)) fs.mkdirSync(IMAGE_CACHE_DIR, { recursive: true });
+
+app.get('/api/image-proxy', (req, res) => {
+  const { url, w, h } = req.query;
+  if (!url) return res.status(400).json({ error: 'url parameter required' });
+
+  // Allow common image CDNs used by product data
+  const allowed = ['images.unsplash.com', 'images.prismic.io', 'www.desousahughes.com', 'desousahughes.com', 'plus.unsplash.com', 'source.unsplash.com'];
+  try {
+    const parsed = new URL(url);
+    if (!allowed.includes(parsed.hostname)) {
+      return res.status(403).json({ error: `Domain not allowed: ${parsed.hostname}` });
+    }
+  } catch {
+    return res.status(400).json({ error: 'Invalid URL' });
+  }
+
+  let targetUrl = url;
+  if (w || h) {
+    const sep = url.includes('?') ? '&' : '?';
+    if (w && h) targetUrl = `${url}${sep}w=${w}&h=${h}`;
+    else if (w) targetUrl = `${url}${sep}w=${w}`;
+    else targetUrl = `${url}${sep}h=${h}`;
+  }
+
+  // Local disk cache (skipped on serverless — Vercel CDN handles caching via Cache-Control)
+  if (!IS_SERVERLESS) {
+    const hash = crypto.createHash('md5').update(targetUrl).digest('hex');
+    const ext = targetUrl.match(/\.(jpg|jpeg|png|webp|gif)/i)?.[1] || 'jpg';
+    const cachePath = path.join(IMAGE_CACHE_DIR, `${hash}.${ext}`);
+    if (fs.existsSync(cachePath)) {
+      const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
+      res.setHeader('Content-Type', mimeMap[ext] || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return fs.createReadStream(cachePath).pipe(res);
+    }
+  }
+
+  const streamToClient = (sourceRes) => {
+    res.setHeader('Content-Type', sourceRes.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+
+    if (!IS_SERVERLESS) {
+      // Write to disk cache while streaming
+      const hash = crypto.createHash('md5').update(targetUrl).digest('hex');
+      const ext = targetUrl.match(/\.(jpg|jpeg|png|webp|gif)/i)?.[1] || 'jpg';
+      const cachePath = path.join(IMAGE_CACHE_DIR, `${hash}.${ext}`);
+      const fileStream = fs.createWriteStream(cachePath);
+      sourceRes.pipe(fileStream);
+    }
+    sourceRes.pipe(res);
+  };
+
+  const protocol = targetUrl.startsWith('https') ? https : http;
+  protocol.get(targetUrl, { headers: { 'User-Agent': 'OpenDesignHome/1.0' } }, (proxyRes) => {
+    if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
+      protocol.get(proxyRes.headers.location, { headers: { 'User-Agent': 'OpenDesignHome/1.0' } }, (rRes) => {
+        streamToClient(rRes);
+      }).on('error', () => res.status(502).json({ error: 'Upstream error' }));
+      return;
+    }
+    if (proxyRes.statusCode !== 200) {
+      return res.status(proxyRes.statusCode).json({ error: 'Upstream error' });
+    }
+    streamToClient(proxyRes);
+  }).on('error', () => res.status(502).json({ error: 'Upstream error' }));
+});
 
 // Health check + debug
 app.get('/api/health', async (req, res) => {
@@ -563,7 +647,7 @@ app.use((err, req, res, next) => {
 // Start server
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`Open Design Home server running on port ${PORT}`);
+    console.log(`OpenDesign Studio server running on port ${PORT}`);
   });
 }
 
