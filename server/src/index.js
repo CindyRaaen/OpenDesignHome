@@ -1,13 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import https from 'https';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
+// fileURLToPath removed — not compatible with Vercel CJS compilation
 import db from './db.js';
 import challengesRouter from './routes/challenges.js';
 import designsRouter from './routes/designs.js';
@@ -55,19 +55,19 @@ async function initializeDatabase() {
     // Ensure users table exists (shared across all Open Scaffold apps)
     // Schema matches Open Restaurant: username (not email), password, name, role
     await db.query(`
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE IF NOT EXISTS odh_users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
+        "passwordHash" VARCHAR(255) NOT NULL,
         name VARCHAR(200),
         role VARCHAR(50) DEFAULT 'user',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
     // Add name column if missing (table may have been created by another app)
-    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(200)`).catch(() => {});
+    await db.query(`ALTER TABLE odh_users ADD COLUMN IF NOT EXISTS name VARCHAR(200)`).catch(() => {});
     // Log actual table columns for debugging
-    const cols = await db.query(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' ORDER BY ordinal_position`);
+    const cols = await db.query(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'odh_users' ORDER BY ordinal_position`);
     console.log('USERS TABLE COLUMNS:', JSON.stringify(cols.rows));
 
     // Create furniture table
@@ -497,13 +497,13 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ error: 'Username and password required' });
   }
   try {
-    const existing = await db.query('SELECT id FROM users WHERE username = $1', [username]);
+    const existing = await db.query('SELECT id FROM odh_users WHERE username = $1', [username]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Username already taken' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await db.query(
-      'INSERT INTO users (username, "passwordHash", name) VALUES ($1, $2, $3) RETURNING id, username, name',
+      'INSERT INTO odh_users (username, "passwordHash", name) VALUES ($1, $2, $3) RETURNING id, username, name',
       [username, hashedPassword, displayName || username]
     );
     const user = result.rows[0];
@@ -518,7 +518,7 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const result = await db.query('SELECT id, username, name, "passwordHash" FROM users WHERE username = $1', [username]);
+    const result = await db.query('SELECT id, username, name, "passwordHash" FROM odh_users WHERE username = $1', [username]);
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
@@ -536,7 +536,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
-    const result = await db.query('SELECT id, username, name FROM users WHERE id = $1', [req.user.id]);
+    const result = await db.query('SELECT id, username, name FROM odh_users WHERE id = $1', [req.user.id]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user' });
@@ -558,8 +558,7 @@ app.use('/api/scoring', scoringRouter); // No auth required — scoring is state
 
 // ── Image proxy (disk cache locally, CDN edge cache on Vercel) ──
 const IS_SERVERLESS = !!process.env.VERCEL;
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const IMAGE_CACHE_DIR = path.join(__dirname, '..', '.image-cache');
+const IMAGE_CACHE_DIR = IS_SERVERLESS ? '/tmp/.image-cache' : path.join(process.cwd(), 'server', '.image-cache');
 if (!IS_SERVERLESS && !fs.existsSync(IMAGE_CACHE_DIR)) fs.mkdirSync(IMAGE_CACHE_DIR, { recursive: true });
 
 app.get('/api/image-proxy', (req, res) => {
@@ -631,7 +630,7 @@ app.get('/api/image-proxy', (req, res) => {
 // Health check + debug
 app.get('/api/health', async (req, res) => {
   try {
-    const cols = await db.query(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' ORDER BY ordinal_position`);
+    const cols = await db.query(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'odh_users' ORDER BY ordinal_position`);
     res.json({ status: 'ok', users_columns: cols.rows });
   } catch (err) {
     res.json({ status: 'error', message: err.message });
